@@ -179,6 +179,44 @@ export default function Home() {
     return parseInt(parts[0]) * 60 + parseInt(parts[1]);
   };
 
+  // Fahrzeug-Farben (Cupra-Grau & Weiß)
+  const getCarColorStyles = (carName: string) => {
+    switch (carName) {
+      case "Schalter": // Clean Weiß / Helles Grau mit dunkler Schrift für perfekte Lesbarkeit
+        return {
+          bg: "bg-[#e5e7eb]",
+          border: "border-white",
+          text: "text-gray-900",
+          badge: "bg-gray-200 text-gray-800",
+          timeBg: "bg-gray-300 text-gray-900"
+        };
+      case "Automatik": // Cupra-Grau (Edles Tech-Anthrazit mit Kupfer/Gelb-Akzenten passend zum Branding)
+        return {
+          bg: "bg-[#27272a]",
+          border: "border-zinc-500",
+          text: "text-white",
+          badge: "bg-zinc-700 text-zinc-200",
+          timeBg: "bg-black/50 text-yellow-400"
+        };
+      case "Motorrad": // Kräftiges Rot
+        return {
+          bg: "bg-[#321a1a]",
+          border: "border-red-500",
+          text: "text-white",
+          badge: "bg-red-500/20 text-red-300",
+          timeBg: "bg-black/60 text-red-400"
+        };
+      default:
+        return {
+          bg: "bg-[#2a2a2a]",
+          border: "border-gray-500",
+          text: "text-white",
+          badge: "bg-gray-500/20 text-gray-300",
+          timeBg: "bg-black/60 text-gray-300"
+        };
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#111111] text-white p-4 font-sans pb-20">
       {/* Header */}
@@ -324,7 +362,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* KUGELSICHERER KALENDER MIT PERFEKT AUSGERICHTETEM KOPF */}
+      {/* KALENDER MIT CUPRA-GRAU UND WEISS */}
       <div className="max-w-7xl mx-auto bg-[#1a1a1a] p-4 sm:p-6 rounded-xl shadow-2xl border border-gray-800 overflow-x-auto">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <div className="flex items-center gap-3">
@@ -351,14 +389,12 @@ export default function Home() {
 
         {/* Tabellen-Raster */}
         <div className="min-w-[850px] flex">
-          {/* Feste Zeitspalte links mit exakt passendem Platzhalter-Kopf */}
+          {/* Feste Zeitspalte links */}
           <div className="w-20 shrink-0 flex flex-col">
-            {/* Kopf-Platzhalter, der exakt dieselbe Höhe hat wie die Wochentage-Köpfe (py-2 + Rahmen/Abstände) */}
             <div className="h-[52px] mb-2 bg-[#222222] border border-gray-700 rounded flex items-center justify-center text-[10px] font-bold text-gray-400 uppercase">
               Zeit
             </div>
 
-            {/* Die Zeit-Slots */}
             {timeSlots.map((slotObj, sIdx) => (
               <div 
                 key={sIdx} 
@@ -393,9 +429,8 @@ export default function Home() {
                     </p>
                   </div>
 
-                  {/* Container für die Slots und absolut positionierte Termine */}
+                  {/* Container für Slots und Termine */}
                   <div className="relative flex flex-col bg-[#131313] border border-gray-800 rounded">
-                    {/* Hintergrund-Linien für jeden 15-Minuten-Slot (exakt 34px Höhe) */}
                     {timeSlots.map((slotObj, sIdx) => (
                       <div 
                         key={sIdx} 
@@ -408,25 +443,25 @@ export default function Home() {
                       />
                     ))}
 
-                    {/* Termine absolut platziert basierend auf exakten Pixeln */}
                     {dayAppointments.map((apt) => {
                       const startMin = timeToMinutes(apt.start_time);
                       const endMin = timeToMinutes(apt.end_time);
 
-                      // Startzeit ab 07:00 Uhr (420 Minuten)
                       const startOffsetMin = startMin - (7 * 60);
                       const slotIndex = startOffsetMin / 15;
                       const durationMin = Math.max(15, endMin - startMin);
                       const slotSpan = durationMin / 15;
 
-                      // Exakte Pixelberechnung: 34px pro Slot
                       const topPx = slotIndex * 34;
-                      const heightPx = slotSpan * 34 - 2; // -2px für sauberen Randabstand
+                      const heightPx = slotSpan * 34 - 2;
+
+                      // Hole die passenden Farben (Schalter = Weiß, Automatik = Cupra-Grau)
+                      const colors = getCarColorStyles(apt.car);
 
                       return (
                         <div 
                           key={apt.id} 
-                          className="absolute left-1 right-1 bg-[#2a2a2a] border-2 border-yellow-500 p-1.5 rounded shadow-xl z-20 overflow-hidden flex flex-col justify-between"
+                          className={`absolute left-1 right-1 border-2 p-1.5 rounded shadow-xl z-20 overflow-hidden flex flex-col justify-between ${colors.bg} ${colors.border}`}
                           style={{ 
                             top: `${topPx}px`, 
                             height: `${heightPx}px` 
@@ -434,19 +469,19 @@ export default function Home() {
                         >
                           <div>
                             <div className="flex justify-between items-center mb-0.5">
-                              <span className="font-bold text-yellow-400 text-[10px] bg-black/60 px-1 rounded">
+                              <span className={`font-bold text-[10px] px-1 rounded ${colors.timeBg}`}>
                                 {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
                               </span>
-                              <button onClick={() => handleDelete(apt.id)} className="text-gray-400 hover:text-red-400 p-0.5" title="Löschen">
+                              <button onClick={() => handleDelete(apt.id)} className="text-gray-500 hover:text-red-600 p-0.5" title="Löschen">
                                 <Trash2 size={11} />
                               </button>
                             </div>
-                            <p className="font-extrabold text-white truncate text-xs">{apt.students?.name}</p>
+                            <p className={`font-extrabold truncate text-xs ${colors.text}`}>{apt.students?.name}</p>
                           </div>
                           
                           <div className="flex flex-wrap gap-1">
-                            <span className="text-[8px] px-1 rounded bg-black/60 text-gray-300 font-medium">{apt.drive_type}</span>
-                            <span className="text-[8px] px-1 rounded bg-yellow-500/20 text-yellow-300 font-medium">🚗 {apt.car}</span>
+                            <span className={`text-[8px] px-1 rounded font-medium ${colors.badge}`}>{apt.drive_type}</span>
+                            <span className={`text-[8px] px-1 rounded font-medium ${colors.badge}`}>🚗 {apt.car}</span>
                           </div>
                         </div>
                       );
