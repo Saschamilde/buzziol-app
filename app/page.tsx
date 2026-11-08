@@ -17,7 +17,7 @@ export default function Home() {
   const [newStudentName, setNewStudentName] = useState("");
   const [studentStatus, setStudentStatus] = useState("");
 
-  // Zustände für Termin-Formular (getrennt nach Stunde und Minute für 15-Minuten-Takt)
+  // Zustände für Termin-Formular
   const [selectedStudent, setSelectedStudent] = useState("");
   const [date, setDate] = useState("");
   const [startHour, setStartHour] = useState("08");
@@ -27,7 +27,6 @@ export default function Home() {
   const [driveType, setDriveType] = useState("Übungsfahrt");
   const [status, setStatus] = useState("");
 
-  // Verfügbare Stunden (06 bis 21 Uhr) und Minuten-Schritte (15 Min)
   const hours = Array.from({ length: 16 }, (_, i) => String(i + 6).padStart(2, "0"));
   const minutes = ["00", "15", "30", "45"];
 
@@ -126,15 +125,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#111111] text-white p-4 font-sans pb-20">
-      {/* Header */}
-      <div className="max-w-md mx-auto mt-8 border-b-4 border-red-600 pb-4 mb-8">
-        <div className="flex justify-between items-end">
-          <h1 className="text-4xl font-black tracking-wider text-gray-200">BUZZIOL</h1>
-          <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-sm tracking-widest">
-            FAHRSCHULE
-          </span>
-        </div>
-        <p className="text-gray-400 mt-2 text-sm">Hallo Max! 👋 Lass uns fahren.</p>
+      {/* Header mit echtem Logo */}
+      <div className="max-w-md mx-auto mt-6 border-b-4 border-red-600 pb-4 mb-8 flex flex-col items-center">
+        <img 
+          src="/logo.png" 
+          alt="Buzziol Fahrschule Logo" 
+          className="h-14 object-contain mb-2"
+        />
+        <p className="text-gray-400 text-sm">Hallo Max! 👋 Lass uns fahren.</p>
       </div>
 
       {/* Eingabe-Formular */}
@@ -193,7 +191,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Von Uhrzeit (Stunde : Minute) */}
+          {/* Von Uhrzeit */}
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Von</label>
             <div className="grid grid-cols-2 gap-2">
@@ -223,7 +221,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Bis Uhrzeit (Stunde : Minute) */}
+          {/* Bis Uhrzeit */}
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Bis</label>
             <div className="grid grid-cols-2 gap-2">
