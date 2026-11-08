@@ -179,12 +179,12 @@ export default function Home() {
     return parseInt(parts[0]) * 60 + parseInt(parts[1]);
   };
 
-  // Design: Dicker Außenrand = Auto (Cupra-Grau für Automatik, Weiß für Schalter) | Hintergrund = Art der Übungsstunde
+  // Design: Doppelt so dicker Außenrahmen = Auto (Cupra-Grau für Automatik, Weiß für Schalter) | Hintergrund = Art der Übungsstunde
   const getCardDesign = (carName: string, driveType: string) => {
-    // 1. Dicker Außenrahmen für das Fahrzeug (Cupra-Grau `#27272a` oder `#3f3f46` für Automatik)
-    let borderStyle = "border-[5px] border-[#3f3f46] shadow-2xl"; // Cupra-Grau für Automatik
+    // 1. Doppelt so dicker Außenrahmen für das Fahrzeug (border-[10px])
+    let borderStyle = "border-[10px] border-[#3f3f46] shadow-2xl"; // Cupra-Grau für Automatik
     if (carName === "Schalter") {
-      borderStyle = "border-[5px] border-white shadow-2xl"; // Sehr dicker, weißer Rahmen für Schalter
+      borderStyle = "border-[10px] border-white shadow-2xl"; // Sehr dicker, weißer Rahmen für Schalter
     }
 
     // 2. Hintergrundfarbe & Textfarbe (Art der Fahrt)
