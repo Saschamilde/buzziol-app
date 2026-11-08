@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { User, Clock, CalendarDays, Calendar, ListTodo, Car, UserPlus, Trash2, KeyRound } from "lucide-react";
+import { User, Clock, CalendarDays, Calendar as CalendarIcon, ListTodo, Car, UserPlus, Trash2, KeyRound, ChevronLeft, ChevronRight } from "lucide-react";
 
 // 1. Supabase Verbindung
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -25,10 +25,13 @@ export default function Home() {
   const [endHour, setEndHour] = useState("09");
   const [endMinute, setEndMinute] = useState("00");
   const [driveType, setDriveType] = useState("Übungsfahrt");
-  const [car, setCar] = useState("Automatik"); // Standardmäßig auf Automatik oder Schalter
+  const [car, setCar] = useState("Automatik");
   const [status, setStatus] = useState("");
 
-  const hours = Array.from({ length: 16 }, (_, i) => String(i + 6).padStart(2, "0"));
+  // Zustand für die angezeigte Woche (Offset zur aktuellen Woche)
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const hours = Array.from({ length: 16 }, (_, i) => String(i + 6).padStart(2, "0")); // 06:00 bis 21:00
   const minutes = ["00", "15", "30", "45"];
 
   // 2. Daten laden
@@ -86,7 +89,7 @@ export default function Home() {
         start_time: startTime, 
         end_time: endTime,
         drive_type: driveType,
-        car: car // Fahrzeug mitspeichern
+        car: car
       }
     ]);
 
@@ -114,10 +117,48 @@ export default function Home() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "";
-    const parts = dateString.split("-");
-    return `${parts[2]}.${parts[1]}.${parts[0]}`;
+  // Hilfsfunktion: Kalenderwoche (KW) berechnen
+  const getCalendarWeek = (d: Date) => {
+    const target = new Date(d.valueOf());
+    const dayNr = (d.getDay() + 6) % 7;
+    target.setDate(target.getDate() - dayNr + 3);
+    const firstThursday = target.valueOf();
+    target.setMonth(0, 1);
+    if (target.getDay() !== 4) {
+      target.setMonth(0, 1 + ((4 - target.getDay() + 7) % 7));
+    }
+    return Math.ceil((1 + Math.abs((firstThursday - target.valueOf()) / 86400000)) / 7);
+  };
+
+  // Wochentage für die aktuelle Wochenansicht berechnen (Mo-So)
+  const getDaysForCurrentWeek = () => {
+    const now = new Date();
+    // Auf Montag der aktuellen Woche ausrichten + Offset
+    const currentDayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - currentDayOfWeek + weekOffset * 7);
+
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(monday);
+      day.setDate(monday.getDate() + i);
+      days.push(day);
+    }
+    return days;
+  };
+
+  const weekDays = getDaysForCurrentWeek();
+  const currentKW = weekDays.length > 0 ? getCalendarWeek(weekDays[0]) : 1;
+
+  const formatDateString = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  const formatDisplayDate = (date: Date) => {
+    return date.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
   };
 
   const formatTime = (timeString: string) => {
@@ -128,7 +169,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#111111] text-white p-4 font-sans pb-20">
       {/* Header */}
-      <div className="max-w-md mx-auto mt-6 border-b-4 border-red-600 pb-4 mb-8 flex flex-col items-center">
+      <div className="max-w-4xl mx-auto mt-6 border-b-4 border-red-600 pb-4 mb-8 flex flex-col items-center">
         <img 
           src="/logo.png" 
           alt="Buzziol Fahrschule Logo" 
@@ -138,7 +179,7 @@ export default function Home() {
       </div>
 
       {/* Eingabe-Formular */}
-      <div className="max-w-md mx-auto bg-[#1a1a1a] p-6 rounded-xl shadow-2xl border border-gray-800 mb-6">
+      <div className="max-w-md mx-auto bg-[#1a1a1a] p-6 rounded-xl shadow-2xl border border-gray-800 mb-8">
         <h2 className="text-lg font-bold mb-6 text-gray-300 flex items-center gap-2">
           <CalendarDays className="text-yellow-500" size={20} />
           ZEITEN EINTRAGEN
@@ -162,7 +203,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Fahrzeug-Auswahl: Automatik / Schalter */}
+          {/* Fahrzeug-Auswahl */}
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Fahrzeug</label>
             <div className="relative">
@@ -200,7 +241,7 @@ export default function Home() {
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Datum</label>
             <div className="relative">
-              <Calendar className="absolute left-3 top-3 text-gray-500" size={18} />
+              <CalendarIcon className="absolute left-3 top-3 text-gray-500" size={18} />
               <input 
                 type="date" 
                 className="w-full bg-[#222222] border border-gray-700 rounded-lg py-3 pl-10 pr-2 text-gray-200 focus:outline-none focus:border-yellow-500"
@@ -286,7 +327,7 @@ export default function Home() {
       </div>
 
       {/* Schüler anlegen */}
-      <div className="max-w-md mx-auto bg-[#1a1a1a] p-6 rounded-xl shadow-2xl border border-gray-800 mb-6">
+      <div className="max-w-md mx-auto bg-[#1a1a1a] p-6 rounded-xl shadow-2xl border border-gray-800 mb-8">
         <h2 className="text-sm font-bold mb-4 text-gray-300 flex items-center gap-2">
           <UserPlus className="text-gray-500" size={18} />
           NEUEN SCHÜLER ANLEGEN
@@ -312,54 +353,107 @@ export default function Home() {
         )}
       </div>
 
-      {/* Termin-Übersicht */}
-      <div className="max-w-md mx-auto bg-[#1a1a1a] p-6 rounded-xl shadow-2xl border border-gray-800">
-        <h2 className="text-lg font-bold mb-4 text-gray-300 flex items-center gap-2">
-          <ListTodo className="text-yellow-500" size={20} />
-          GEBUCHTE FAHRTEN
-        </h2>
-        
-        <div className="space-y-3">
-          {appointments.length === 0 ? (
-            <p className="text-gray-500 text-sm text-center py-4 italic">Noch keine Termine eingetragen.</p>
-          ) : (
-            appointments.map((apt) => (
-              <div key={apt.id} className="bg-[#222222] border border-gray-700 p-4 rounded-lg flex justify-between items-center hover:border-gray-500 transition-colors group">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-bold text-gray-200">{apt.students?.name || "Unbekannt"}</p>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                      apt.drive_type === 'Übungsfahrt' || !apt.drive_type
-                        ? 'bg-gray-700 text-gray-300' 
-                        : apt.drive_type === 'Prüfung'
-                        ? 'bg-yellow-500 text-black'
-                        : 'bg-red-900 text-red-200'
-                    }`}>
-                      {apt.drive_type || 'Übungsfahrt'}
-                    </span>
-                  </div>
-                  {/* Fahrzeug-Anzeige auf der Karte */}
-                  <p className="text-xs text-yellow-500/80 mt-1 font-medium">🚗 {apt.car || 'Automatik'}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{formatDate(apt.date)}</p>
+      {/* WOCHENANSICHT (Kalender) */}
+      <div className="max-w-6xl mx-auto bg-[#1a1a1a] p-6 rounded-xl shadow-2xl border border-gray-800">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+          <div className="flex items-center gap-3">
+            <ListTodo className="text-yellow-500" size={24} />
+            <h2 className="text-xl font-bold text-gray-200">WOCHENANSICHT</h2>
+            <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full tracking-wider">
+              KW {currentKW}
+            </span>
+          </div>
+          
+          {/* Wochen-Navigation */}
+          <div className="flex items-center gap-2 bg-[#222222] p-1.5 rounded-lg border border-gray-700">
+            <button 
+              onClick={() => setWeekOffset(weekOffset - 1)}
+              className="p-2 hover:bg-gray-700 rounded text-gray-300 transition-colors flex items-center gap-1 text-xs font-bold"
+              title="Vorherige Woche"
+            >
+              <ChevronLeft size={16} /> Vorherige
+            </button>
+            <button 
+              onClick={() => setWeekOffset(0)}
+              className="px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded text-xs font-bold transition-colors"
+            >
+              Aktuelle Woche
+            </button>
+            <button 
+              onClick={() => setWeekOffset(weekOffset + 1)}
+              className="p-2 hover:bg-gray-700 rounded text-gray-300 transition-colors flex items-center gap-1 text-xs font-bold"
+              title="Nächste Woche"
+            >
+              Nächste <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* 7-Tage Grid (Horizontal nebeneinander auf großen Bildschirmen, untereinander auf Mobile) */}
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+          {weekDays.map((day, idx) => {
+            const dateStr = formatDateString(day);
+            // Filtere Termine für diesen specific Tag
+            const dayAppointments = appointments.filter((apt) => apt.date === dateStr);
+            const isToday = formatDateString(new Date()) === dateStr;
+
+            return (
+              <div 
+                key={idx} 
+                className={`bg-[#222222] rounded-lg p-3 border flex flex-col ${
+                  isToday ? 'border-yellow-500 shadow-lg shadow-yellow-500/10' : 'border-gray-700/80'
+                }`}
+              >
+                {/* Tageskopf */}
+                <div className="border-b border-gray-700 pb-2 mb-3 text-center">
+                  <p className="text-xs font-bold text-gray-400 uppercase">
+                    {day.toLocaleDateString('de-DE', { weekday: 'short' })}
+                  </p>
+                  <p className={`text-sm font-black ${isToday ? 'text-yellow-500' : 'text-gray-200'}`}>
+                    {day.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+                  </p>
                 </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className="text-yellow-500 font-bold bg-[#111111] px-3 py-1 rounded">
-                      {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
-                    </p>
-                  </div>
-                  <button 
-                    onClick={() => handleDelete(apt.id)}
-                    className="text-gray-600 hover:text-red-500 transition-colors p-1"
-                    title="Termin löschen"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+
+                {/* Termine am jeweiligen Tag (mit Zeitraster sortiert) */}
+                <div className="space-y-2 flex-1">
+                  {dayAppointments.length === 0 ? (
+                    <p className="text-gray-600 text-xs text-center py-6 italic">Keine Fahrten</p>
+                  ) : (
+                    dayAppointments.map((apt) => (
+                      <div 
+                        key={apt.id} 
+                        className="bg-[#181818] border border-gray-700/60 p-2.5 rounded-md hover:border-yellow-500/50 transition-all text-xs"
+                      >
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-bold text-yellow-500 bg-[#111111] px-1.5 py-0.5 rounded text-[11px]">
+                            {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
+                          </span>
+                          <button 
+                            onClick={() => handleDelete(apt.id)}
+                            className="text-gray-500 hover:text-red-400 transition-colors p-0.5"
+                            title="Löschen"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+
+                        <p className="font-bold text-gray-100 mt-1 truncate">{apt.students?.name || "Unbekannt"}</p>
+                        
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">
+                            {apt.drive_type || 'Übungsfahrt'}
+                          </span>
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400">
+                            🚗 {apt.car || 'Automatik'}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-            ))
-          )}
+            );
+          })}
         </div>
       </div>
 
