@@ -37,11 +37,17 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // Uhrzeiten für das Raster von 07:00 bis 00:00 Uhr (18 Stunden)
-  const timeSlots = Array.from({ length: 18 }, (_, i) => {
-    const hour = i + 7;
-    return `${String(hour).padStart(2, "0")}:00`;
-  });
+  // Erstelle alle 15-Minuten-Slots von 07:00 bis 00:00 Uhr
+  const timeSlots: { time: string; isFullHour: boolean }[] = [];
+  for (let hour = 7; hour <= 23; hour++) {
+    const hStr = String(hour).padStart(2, "0");
+    timeSlots.push({ time: `${hStr}:00`, isFullHour: true });
+    timeSlots.push({ time: `${hStr}:15`, isFullHour: false });
+    timeSlots.push({ time: `${hStr}:30`, isFullHour: false });
+    timeSlots.push({ time: `${hStr}:45`, isFullHour: false });
+  }
+  // Letzter Slot 00:00 Uhr
+  timeSlots.push({ time: "00:00", isFullHour: true });
 
   const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
   const minutes = ["00", "15", "30", "45"];
@@ -168,12 +174,11 @@ export default function Home() {
     return timeString.substring(0, 5);
   };
 
+  // Prüfen, ob ein Termin exakt zu diesem 15-Minuten-Slot beginnt
   const getAppointmentsForSlot = (dateStr: string, slotTime: string) => {
-    const slotHour = parseInt(slotTime.split(":")[0]);
     return appointments.filter((apt) => {
       if (apt.date !== dateStr) return false;
-      const startH = parseInt(apt.start_time.split(":")[0]);
-      return startH === slotHour;
+      return apt.start_time === slotTime;
     });
   };
 
@@ -322,12 +327,12 @@ export default function Home() {
         )}
       </div>
 
-      {/* KALENDER MIT ZEIT-RASTER & WOCHENANSICHT (07:00 - 00:00) */}
+      {/* KALENDER MIT 15-MINUTEN RASTER (VOLLE STUNDEN FETT) */}
       <div className="max-w-7xl mx-auto bg-[#1a1a1a] p-4 sm:p-6 rounded-xl shadow-2xl border border-gray-800 overflow-x-auto">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <div className="flex items-center gap-3">
             <ListTodo className="text-yellow-500" size={24} />
-            <h2 className="text-xl font-bold text-gray-200">ZEIT-RASTER KALENDER (07:00 - 00:00)</h2>
+            <h2 className="text-xl font-bold text-gray-200">15-MINUTEN KALENDER-RASTER</h2>
             <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full tracking-wider">
               KW {currentKW}
             </span>
@@ -348,9 +353,9 @@ export default function Home() {
         </div>
 
         {/* Tabellen-Raster */}
-        <div className="min-w-[800px]">
+        <div className="min-w-[850px]">
           {/* Tabellen-Kopf (Wochentage) */}
-          <div className="grid grid-cols-8 gap-1 mb-2 bg-[#222222] p-2 rounded-lg border border-gray-700">
+          <div className="grid grid-cols-8 gap-1 mb-2 bg-[#222222] p-2 rounded-lg border border-gray-700 sticky top-0 z-10">
             <div className="text-center font-bold text-gray-400 text-xs uppercase flex items-center justify-center">Zeit</div>
             {weekDays.map((day, idx) => {
               const isToday = formatDateString(new Date()) === formatDateString(day);
@@ -365,50 +370,67 @@ export default function Home() {
             })}
           </div>
 
-          {/* Stunden-Zeilen (Raster 07:00 bis 00:00) */}
-          <div className="space-y-1">
-            {timeSlots.map((slot, sIdx) => (
-              <div key={sIdx} className="grid grid-cols-8 gap-1 items-stretch">
-                {/* Zeitspalte links */}
-                <div className="bg-[#181818] border border-gray-800 rounded p-2 text-center flex items-center justify-center text-xs font-bold text-yellow-500">
-                  {slot}
+          {/* 15-Minuten-Zeilen */}
+          <div className="space-y-[2px]">
+            {timeSlots.map((slotObj, sIdx) => {
+              const { time, isFullHour } = slotObj;
+
+              return (
+                <div 
+                  key={sIdx} 
+                  className={`grid grid-cols-8 gap-1 items-stretch ${
+                    isFullHour ? 'border-t border-gray-600/60 pt-[2px]' : ''
+                  }`}
+                >
+                  {/* Zeitspalte links (Volle Stunden groß & fett, 15-Minuten klein & grau) */}
+                  <div className={`border rounded p-1 text-center flex items-center justify-center ${
+                    isFullHour 
+                      ? 'bg-[#222222] border-gray-600 text-yellow-400 font-black text-xs shadow-inner' 
+                      : 'bg-[#151515] border-gray-800 text-gray-500 font-normal text-[10px]'
+                  }`}>
+                    {time}
+                  </div>
+
+                  {/* 7 Tage Spalten für diesen 15-Minuten-Slot */}
+                  {weekDays.map((day, dIdx) => {
+                    const dateStr = formatDateString(day);
+                    const slotAppointments = getAppointmentsForSlot(dateStr, time);
+
+                    return (
+                      <div 
+                        key={dIdx} 
+                        className={`rounded px-1.5 py-0.5 flex flex-col justify-start transition-colors ${
+                          isFullHour 
+                            ? 'bg-[#1b1b1b] border border-gray-800' 
+                            : 'bg-[#131313] border border-gray-900/40'
+                        }`}
+                        style={{ minHeight: isFullHour ? '45px' : '30px' }}
+                      >
+                        {slotAppointments.length > 0 && (
+                          slotAppointments.map((apt) => (
+                            <div key={apt.id} className="bg-[#2a2a2a] border border-yellow-500/60 p-1.5 rounded text-[11px] my-0.5 shadow-md z-0">
+                              <div className="flex justify-between items-center mb-0.5">
+                                <span className="font-bold text-yellow-400 text-[10px] bg-black/40 px-1 rounded">
+                                  {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
+                                </span>
+                                <button onClick={() => handleDelete(apt.id)} className="text-gray-400 hover:text-red-400 p-0.5" title="Löschen">
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                              <p className="font-extrabold text-white truncate text-xs">{apt.students?.name}</p>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                <span className="text-[9px] px-1 rounded bg-black/50 text-gray-300 font-medium">{apt.drive_type}</span>
+                                <span className="text-[9px] px-1 rounded bg-yellow-500/20 text-yellow-300 font-medium">🚗 {apt.car}</span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-
-                {/* 7 Tage Spalten für diese Stunde */}
-                {weekDays.map((day, dIdx) => {
-                  const dateStr = formatDateString(day);
-                  const slotAppointments = getAppointmentsForSlot(dateStr, slot);
-
-                  return (
-                    <div key={dIdx} className="bg-[#1f1f1f] border border-gray-800/80 rounded p-1.5 min-h-[65px] flex flex-col justify-start">
-                      {slotAppointments.length === 0 ? (
-                        <div className="flex-1 flex items-center justify-center">
-                          <span className="text-[10px] text-gray-600 font-mono">frei</span>
-                        </div>
-                      ) : (
-                        slotAppointments.map((apt) => (
-                          <div key={apt.id} className="bg-[#2a2a2a] border border-yellow-500/40 p-1.5 rounded text-[11px] mb-1 shadow-sm">
-                            <div className="flex justify-between items-center mb-0.5">
-                              <span className="font-bold text-yellow-400 text-[10px]">
-                                {formatTime(apt.start_time)}-{formatTime(apt.end_time)}
-                              </span>
-                              <button onClick={() => handleDelete(apt.id)} className="text-gray-500 hover:text-red-400" title="Löschen">
-                                <Trash2 size={11} />
-                              </button>
-                            </div>
-                            <p className="font-bold text-gray-100 truncate">{apt.students?.name}</p>
-                            <div className="flex gap-1 mt-1">
-                              <span className="text-[8px] px-1 rounded bg-black/40 text-gray-300">{apt.drive_type}</span>
-                              <span className="text-[8px] px-1 rounded bg-yellow-500/20 text-yellow-300">🚗 {apt.car}</span>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
