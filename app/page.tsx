@@ -276,18 +276,26 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Startpunkt / Abholort mit integrierten Logos im Dropdown */}
           <div>
             <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wide">Startpunkt / Abholort</label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3 text-zinc-400" size={18} />
+            <div className="relative flex items-center bg-[#f4f2ec] border border-zinc-300 rounded-lg px-3 py-2.5 focus-within:border-yellow-600">
+              {/* Vorschaubild im Dropdown je nach Auswahl */}
+              <div className="w-8 h-6 flex items-center justify-center mr-2 shrink-0 bg-white rounded border border-zinc-200 overflow-hidden">
+                <img 
+                  src={pickupLocation === "Bahnhof (Netto)" ? "/netto.png" : pickupLocation === "Bahnhof (Rewe)" ? "/rewe.png" : "/logo.png"} 
+                  alt="Symbol" 
+                  className="max-h-5 max-w-7 object-contain"
+                />
+              </div>
               <select 
-                className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-3 px-10 text-zinc-800 appearance-none focus:outline-none focus:border-yellow-600"
+                className="w-full bg-transparent text-zinc-800 appearance-none focus:outline-none font-medium cursor-pointer"
                 value={pickupLocation}
                 onChange={(e) => setPickupLocation(e.target.value)}
               >
-                <option value="Fahrschule">1. Fahrschule</option>
-                <option value="Bahnhof (Netto)">2.1 Bahnhof (Netto)</option>
-                <option value="Bahnhof (Rewe)">2.2 Bahnhof (Rewe)</option>
+                <option value="Fahrschule">Fahrschule</option>
+                <option value="Bahnhof (Netto)">Bahnhof (Netto)</option>
+                <option value="Bahnhof (Rewe)">Bahnhof (Rewe)</option>
               </select>
             </div>
           </div>
@@ -481,7 +489,7 @@ export default function Home() {
                             </div>
                             <p className="font-black text-sm truncate tracking-tight">{apt.students?.name}</p>
                             
-                            {/* Dynamische Anzeige: Fahrschule-Logo, Netto-Logo oder Rewe-Logo */}
+                            {/* Logos auf der Terminkarte */}
                             {apt.pickup_location === "Fahrschule" ? (
                               <div className="inline-flex items-center bg-white/90 px-2 py-0.5 rounded mt-1 shadow-sm">
                                 <img src="/logo.png" alt="Fahrschule Logo" className="h-4 object-contain" />
