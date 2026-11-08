@@ -46,7 +46,6 @@ export default function Home() {
     timeSlots.push({ time: `${hStr}:30`, isFullHour: false });
     timeSlots.push({ time: `${hStr}:45`, isFullHour: false });
   }
-  // Letzter Slot 00:00 Uhr
   timeSlots.push({ time: "00:00", isFullHour: true });
 
   const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
@@ -174,11 +173,13 @@ export default function Home() {
     return timeString.substring(0, 5);
   };
 
-  // Prüfen, ob ein Termin exakt zu diesem 15-Minuten-Slot beginnt
+  // Robustere Prüfung: Zeige den Termin im exakten 15-Minuten-Slot an
   const getAppointmentsForSlot = (dateStr: string, slotTime: string) => {
     return appointments.filter((apt) => {
       if (apt.date !== dateStr) return false;
-      return apt.start_time === slotTime;
+      // Vergleiche direkt den formatierten Start-String (z.B. "08:15") mit dem Slot
+      const aptTimeFormatted = formatTime(apt.start_time);
+      return aptTimeFormatted === slotTime;
     });
   };
 
@@ -327,7 +328,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* KALENDER MIT 15-MINUTEN RASTER (VOLLE STUNDEN FETT) */}
+      {/* KALENDER MIT 15-MINUTEN RASTER */}
       <div className="max-w-7xl mx-auto bg-[#1a1a1a] p-4 sm:p-6 rounded-xl shadow-2xl border border-gray-800 overflow-x-auto">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <div className="flex items-center gap-3">
@@ -382,7 +383,6 @@ export default function Home() {
                     isFullHour ? 'border-t border-gray-600/60 pt-[2px]' : ''
                   }`}
                 >
-                  {/* Zeitspalte links (Volle Stunden groß & fett, 15-Minuten klein & grau) */}
                   <div className={`border rounded p-1 text-center flex items-center justify-center ${
                     isFullHour 
                       ? 'bg-[#222222] border-gray-600 text-yellow-400 font-black text-xs shadow-inner' 
@@ -391,7 +391,6 @@ export default function Home() {
                     {time}
                   </div>
 
-                  {/* 7 Tage Spalten für diesen 15-Minuten-Slot */}
                   {weekDays.map((day, dIdx) => {
                     const dateStr = formatDateString(day);
                     const slotAppointments = getAppointmentsForSlot(dateStr, time);
