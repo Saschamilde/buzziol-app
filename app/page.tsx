@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { User, Clock, CalendarDays, Calendar as CalendarIcon, ListTodo, Car, UserPlus, Trash2, KeyRound, ChevronLeft, ChevronRight } from "lucide-react";
+import { User, Clock, CalendarDays, Calendar as CalendarIcon, ListTodo, Car, UserPlus, Trash2, KeyRound, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 
 // 1. Supabase Verbindung
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -26,6 +26,7 @@ export default function Home() {
   const [endMinute, setEndMinute] = useState("00");
   const [driveType, setDriveType] = useState("Übungsfahrt");
   const [car, setCar] = useState("Automatik");
+  const [pickupLocation, setPickupLocation] = useState("Fahrschule"); // Standard-Abholort
   const [status, setStatus] = useState("");
 
   // Zustand für die angezeigte Woche
@@ -102,7 +103,8 @@ export default function Home() {
         start_time: startTime, 
         end_time: endTime,
         drive_type: driveType,
-        car: car
+        car: car,
+        pickup_location: pickupLocation
       }
     ]);
 
@@ -111,6 +113,7 @@ export default function Home() {
     } else {
       setStatus("Termin erfolgreich gespeichert! ✅");
       setDate("");
+      setPickupLocation("Fahrschule");
       setDriveType("Übungsfahrt");
       fetchData();
       setTimeout(() => setStatus(""), 3000);
@@ -179,27 +182,25 @@ export default function Home() {
     return parseInt(parts[0]) * 60 + parseInt(parts[1]);
   };
 
-  // Design: Doppelt so dicker Außenrahmen = Auto (Cupra-Grau für Automatik, Weiß für Schalter) | Hintergrund = Art der Übungsstunde
+  // Design-Funktion
   const getCardDesign = (carName: string, driveType: string) => {
-    // 1. Doppelt so dicker Außenrahmen für das Fahrzeug (border-[10px])
-    let borderStyle = "border-[10px] border-[#3f3f46] shadow-2xl"; // Cupra-Grau für Automatik
+    let borderStyle = "border-[10px] border-[#3f3f46] shadow-2xl"; 
     if (carName === "Schalter") {
-      borderStyle = "border-[10px] border-white shadow-2xl"; // Sehr dicker, weißer Rahmen für Schalter
+      borderStyle = "border-[10px] border-white shadow-2xl"; 
     }
 
-    // 2. Hintergrundfarbe & Textfarbe (Art der Fahrt)
-    let bgStyle = "bg-orange-500 text-white"; // Standard Übungsfahrt in Orange
+    let bgStyle = "bg-orange-500 text-white"; 
     let timeTextBg = "bg-black/30 text-white font-bold";
 
     if (driveType === "Autobahnfahrt") {
-      bgStyle = "bg-blue-600 text-white"; // Autobahn-Blau
+      bgStyle = "bg-blue-600 text-white";
     } else if (driveType === "Überlandfahrt") {
-      bgStyle = "bg-green-600 text-white"; // Überland-Grün
+      bgStyle = "bg-green-600 text-white";
     } else if (driveType === "Nachtfahrt") {
-      bgStyle = "bg-yellow-400 text-black"; // Nachtfahrt-Gelb
+      bgStyle = "bg-yellow-400 text-black";
       timeTextBg = "bg-black/20 text-black font-bold";
     } else if (driveType === "Prüfung") {
-      bgStyle = "bg-red-600 text-white animate-pulse"; // Prüfung-Rot
+      bgStyle = "bg-red-600 text-white animate-pulse";
     }
 
     return { borderStyle, bgStyle, timeTextBg };
@@ -271,6 +272,24 @@ export default function Home() {
                 <option value="Autobahnfahrt">Autobahnfahrt (Sonderfahrt)</option>
                 <option value="Nachtfahrt">Nachtfahrt (Sonderfahrt)</option>
                 <option value="Prüfung">Praktische Prüfung</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Abholort als Auswahlliste (reduziert auf Fahrschule & Bahnhof Netto/Rewe) */}
+          <div>
+            <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wide">Startpunkt / Abholort</label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-3 text-zinc-400" size={18} />
+              <select 
+                className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-3 px-10 text-zinc-800 appearance-none focus:outline-none focus:border-yellow-600"
+                value={pickupLocation}
+                onChange={(e) => setPickupLocation(e.target.value)}
+              >
+                <option value="Fahrschule">1. Fahrschule</option>
+                <option value="Bahnhof (Netto)">2.1 Bahnhof (Netto)</option>
+                <option value="Bahnhof (Rewe)">2.2 Bahnhof (Rewe)</option>
+                {/* Weitere Orte können hier später ganz einfach als <option> ergänzt werden */}
               </select>
             </div>
           </div>
@@ -463,6 +482,14 @@ export default function Home() {
                               </button>
                             </div>
                             <p className="font-black text-sm truncate tracking-tight">{apt.students?.name}</p>
+                            
+                            {/* Abholort mit Pin-Symbol */}
+                            {apt.pickup_location && (
+                              <div className="inline-flex items-center gap-1 bg-black/30 text-yellow-300 font-bold text-[10px] px-1.5 py-0.5 rounded mt-1 truncate">
+                                <MapPin size={11} className="shrink-0 text-yellow-300" />
+                                <span className="truncate">{apt.pickup_location}</span>
+                              </div>
+                            )}
                           </div>
                           
                           <div className="flex flex-wrap gap-1 mt-1">
