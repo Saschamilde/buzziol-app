@@ -97,7 +97,24 @@ export default function Home() {
     }
   };
 
-  // 4. Termin speichern
+  // 4. Schüler löschen
+  const handleDeleteStudent = async (studentId: string, studentName: string) => {
+    if (!window.confirm(`Schüler "${studentName}" wirklich löschen? (Dabei werden auch alle zugehörigen Termine entfernt)`)) return;
+
+    // Erst die Termine des Schülers löschen, um Foreign-Key-Konflikte zu vermeiden
+    await supabase.from("availabilities").delete().eq("student_id", studentId);
+
+    // Dann den Schüler löschen
+    const { error } = await supabase.from("students").delete().eq("id", studentId);
+    
+    if (error) {
+      alert("Fehler beim Löschen des Schülers: " + error.message);
+    } else {
+      fetchData();
+    }
+  };
+
+  // 5. Termin speichern
   const handleSave = async () => {
     if (!selectedStudent || !date) {
       setStatus("Bitte Schüler und Datum ausfüllen!");
@@ -132,7 +149,7 @@ export default function Home() {
     }
   };
 
-  // 5. Termin löschen
+  // 6. Termin löschen
   const handleDelete = async (id: string) => {
     if (!window.confirm("Diesen Termin wirklich löschen?")) return;
 
@@ -145,7 +162,7 @@ export default function Home() {
     }
   };
 
-  // 6. Bearbeiten Modal öffnen und Werte vorbefüllen
+  // 7. Bearbeiten Modal öffnen
   const openEditModal = (apt: any) => {
     setEditingApt(apt);
     setEditStudentId(apt.student_id);
@@ -161,7 +178,7 @@ export default function Home() {
     setEditPickupLocation(apt.pickup_location || "Fahrschule");
   };
 
-  // 7. Termin aktualisieren
+  // 8. Termin aktualisieren
   const handleUpdate = async () => {
     if (!editingApt) return;
 
@@ -238,7 +255,6 @@ export default function Home() {
     return parseInt(parts[0]) * 60 + parseInt(parts[1]);
   };
 
-  // Design-Funktion
   const getCardDesign = (carName: string, driveType: string) => {
     let borderStyle = "border-[10px] border-[#3f3f46] shadow-2xl"; 
     if (carName === "Schalter") {
@@ -404,13 +420,13 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Schüler anlegen */}
+      {/* Schüler anlegen & verwalten */}
       <div className="max-w-md mx-auto bg-white p-6 rounded-xl shadow-xl border border-zinc-200 mb-8">
         <h2 className="text-sm font-bold mb-4 text-zinc-800 flex items-center gap-2">
           <UserPlus className="text-zinc-500" size={18} />
-          NEUEN SCHÜLER ANLEGEN
+          SCHÜLER VERWALTEN
         </h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 mb-4">
           <input 
             type="text" placeholder="Name des Schülers..."
             className="flex-1 bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-3 text-zinc-800 focus:outline-none focus:border-yellow-600 text-sm"
@@ -422,9 +438,28 @@ export default function Home() {
           </button>
         </div>
         {studentStatus && (
-          <p className={`text-xs font-semibold mt-3 ${studentStatus.includes('Fehler') || studentStatus.includes('Bitte') ? 'text-red-600' : 'text-green-600'}`}>
+          <p className={`text-xs font-semibold mb-3 ${studentStatus.includes('Fehler') || studentStatus.includes('Bitte') ? 'text-red-600' : 'text-green-600'}`}>
             {studentStatus}
           </p>
+        )}
+
+        {/* Liste aller vorhandenen Schüler mit Lösch-Button */}
+        {students.length > 0 && (
+          <div className="border-t border-zinc-200 pt-3 max-h-40 overflow-y-auto space-y-2">
+            <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-wide mb-1">Vorhandene Schüler ({students.length})</p>
+            {students.map((student) => (
+              <div key={student.id} className="flex justify-between items-center bg-[#f7f5f0] px-3 py-1.5 rounded-lg border border-zinc-200 text-sm">
+                <span className="font-semibold text-zinc-800">{student.name}</span>
+                <button 
+                  onClick={() => handleDeleteStudent(student.id, student.name)}
+                  className="text-red-500 hover:text-red-700 p-1 transition-colors"
+                  title="Schüler löschen"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
