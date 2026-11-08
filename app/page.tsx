@@ -481,10 +481,14 @@ export default function Home() {
                             </div>
                             <p className="font-black text-sm truncate tracking-tight">{apt.students?.name}</p>
                             
-                            {/* Dynamische Anzeige je nach Abholort (Fahrschule Logo oder Rewe Logo oder Text) */}
+                            {/* Dynamische Anzeige: Fahrschule-Logo, Netto-Logo oder Rewe-Logo */}
                             {apt.pickup_location === "Fahrschule" ? (
                               <div className="inline-flex items-center bg-white/90 px-2 py-0.5 rounded mt-1 shadow-sm">
                                 <img src="/logo.png" alt="Fahrschule Logo" className="h-4 object-contain" />
+                              </div>
+                            ) : apt.pickup_location === "Bahnhof (Netto)" ? (
+                              <div className="inline-flex items-center bg-white/90 px-2 py-0.5 rounded mt-1 shadow-sm">
+                                <img src="/netto.png" alt="Netto Logo" className="h-4 object-contain" />
                               </div>
                             ) : apt.pickup_location === "Bahnhof (Rewe)" ? (
                               <div className="inline-flex items-center bg-white/90 px-2 py-0.5 rounded mt-1 shadow-sm">
@@ -499,7 +503,7 @@ export default function Home() {
                               )
                             )}
                           </div>
-                        
+                          
                           <div className="flex flex-wrap gap-1 mt-1">
                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/40 text-white font-bold">{apt.drive_type}</span>
                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/40 text-white font-bold">🚗 {apt.car}</span>
