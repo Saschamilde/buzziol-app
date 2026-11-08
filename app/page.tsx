@@ -26,7 +26,7 @@ export default function Home() {
   const [endMinute, setEndMinute] = useState("00");
   const [driveType, setDriveType] = useState("Übungsfahrt");
   const [car, setCar] = useState("Automatik");
-  const [pickupLocation, setPickupLocation] = useState("Fahrschule"); // Standard-Abholort
+  const [pickupLocation, setPickupLocation] = useState("Fahrschule");
   const [status, setStatus] = useState("");
 
   // Zustand für die angezeigte Woche
@@ -276,7 +276,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Abholort als Auswahlliste (reduziert auf Fahrschule & Bahnhof Netto/Rewe) */}
           <div>
             <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wide">Startpunkt / Abholort</label>
             <div className="relative">
@@ -289,7 +288,6 @@ export default function Home() {
                 <option value="Fahrschule">1. Fahrschule</option>
                 <option value="Bahnhof (Netto)">2.1 Bahnhof (Netto)</option>
                 <option value="Bahnhof (Rewe)">2.2 Bahnhof (Rewe)</option>
-                {/* Weitere Orte können hier später ganz einfach als <option> ergänzt werden */}
               </select>
             </div>
           </div>
@@ -483,12 +481,18 @@ export default function Home() {
                             </div>
                             <p className="font-black text-sm truncate tracking-tight">{apt.students?.name}</p>
                             
-                            {/* Abholort mit Pin-Symbol */}
-                            {apt.pickup_location && (
-                              <div className="inline-flex items-center gap-1 bg-black/30 text-yellow-300 font-bold text-[10px] px-1.5 py-0.5 rounded mt-1 truncate">
-                                <MapPin size={11} className="shrink-0 text-yellow-300" />
-                                <span className="truncate">{apt.pickup_location}</span>
+                            {/* Wenn Abholort "Fahrschule" ist, zeige das Logo.png skaliert an. Sonst Pin mit Text. */}
+                            {apt.pickup_location === "Fahrschule" ? (
+                              <div className="inline-flex items-center bg-white/90 px-2 py-0.5 rounded mt-1 shadow-sm">
+                                <img src="/logo.png" alt="Fahrschule Logo" className="h-4 object-contain" />
                               </div>
+                            ) : (
+                              apt.pickup_location && (
+                                <div className="inline-flex items-center gap-1 bg-black/30 text-yellow-300 font-bold text-[10px] px-1.5 py-0.5 rounded mt-1 truncate">
+                                 <MapPin size={11} className="shrink-0 text-yellow-300" />
+                                 <span className="truncate">{apt.pickup_location}</span>
+                                </div>
+                              )
                             )}
                           </div>
                           
