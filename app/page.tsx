@@ -481,21 +481,25 @@ export default function Home() {
                             </div>
                             <p className="font-black text-sm truncate tracking-tight">{apt.students?.name}</p>
                             
-                            {/* Wenn Abholort "Fahrschule" ist, zeige das Logo.png skaliert an. Sonst Pin mit Text. */}
+                            {/* Dynamische Anzeige je nach Abholort (Fahrschule Logo oder Rewe Logo oder Text) */}
                             {apt.pickup_location === "Fahrschule" ? (
                               <div className="inline-flex items-center bg-white/90 px-2 py-0.5 rounded mt-1 shadow-sm">
                                 <img src="/logo.png" alt="Fahrschule Logo" className="h-4 object-contain" />
                               </div>
+                            ) : apt.pickup_location === "Bahnhof (Rewe)" ? (
+                              <div className="inline-flex items-center bg-white/90 px-2 py-0.5 rounded mt-1 shadow-sm">
+                                <img src="/rewe.png" alt="Rewe Logo" className="h-4 object-contain" />
+                              </div>
                             ) : (
                               apt.pickup_location && (
                                 <div className="inline-flex items-center gap-1 bg-black/30 text-yellow-300 font-bold text-[10px] px-1.5 py-0.5 rounded mt-1 truncate">
-                                 <MapPin size={11} className="shrink-0 text-yellow-300" />
-                                 <span className="truncate">{apt.pickup_location}</span>
+                                  <MapPin size={11} className="shrink-0 text-yellow-300" />
+                                  <span className="truncate">{apt.pickup_location}</span>
                                 </div>
                               )
                             )}
                           </div>
-                          
+                        
                           <div className="flex flex-wrap gap-1 mt-1">
                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/40 text-white font-bold">{apt.drive_type}</span>
                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/40 text-white font-bold">🚗 {apt.car}</span>
