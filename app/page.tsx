@@ -28,7 +28,7 @@ export default function Home() {
   const [car, setCar] = useState("Automatik");
   const [status, setStatus] = useState("");
 
-  // Zustand für die angezeigte Woche (Offset zur aktuellen Woche)
+  // Zustand für die angezeigte Woche
   const [weekOffset, setWeekOffset] = useState(0);
   const [mounted, setMounted] = useState(false);
 
@@ -37,7 +37,13 @@ export default function Home() {
     fetchData();
   }, []);
 
-  const hours = Array.from({ length: 16 }, (_, i) => String(i + 6).padStart(2, "0")); // 06:00 bis 21:00
+  // Uhrzeiten für das Raster von 07:00 bis 00:00 Uhr (18 Stunden)
+  const timeSlots = Array.from({ length: 18 }, (_, i) => {
+    const hour = i + 7;
+    return `${String(hour).padStart(2, "0")}:00`;
+  });
+
+  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
   const minutes = ["00", "15", "30", "45"];
 
   // 2. Daten laden
@@ -119,7 +125,7 @@ export default function Home() {
     }
   };
 
-  // Hilfsfunktion: Kalenderwoche (KW) berechnen
+  // Kalenderwoche berechnen
   const getCalendarWeek = (d: Date) => {
     const target = new Date(d.valueOf());
     const dayNr = (d.getDay() + 6) % 7;
@@ -132,7 +138,6 @@ export default function Home() {
     return Math.ceil((1 + Math.abs((firstThursday - target.valueOf()) / 86400000)) / 7);
   };
 
-  // Wochentage für die aktuelle Wochenansicht berechnen (Mo-So)
   const getDaysForCurrentWeek = () => {
     const now = new Date();
     const currentDayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
@@ -163,10 +168,19 @@ export default function Home() {
     return timeString.substring(0, 5);
   };
 
+  const getAppointmentsForSlot = (dateStr: string, slotTime: string) => {
+    const slotHour = parseInt(slotTime.split(":")[0]);
+    return appointments.filter((apt) => {
+      if (apt.date !== dateStr) return false;
+      const startH = parseInt(apt.start_time.split(":")[0]);
+      return startH === slotHour;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#111111] text-white p-4 font-sans pb-20">
       {/* Header */}
-      <div className="max-w-4xl mx-auto mt-6 border-b-4 border-red-600 pb-4 mb-8 flex flex-col items-center">
+      <div className="max-w-6xl mx-auto mt-6 border-b-4 border-red-600 pb-4 mb-8 flex flex-col items-center">
         <img 
           src="/logo.png" 
           alt="Buzziol Fahrschule Logo" 
@@ -200,7 +214,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Fahrzeug-Auswahl */}
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Fahrzeug</label>
             <div className="relative">
@@ -248,70 +261,32 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Von Uhrzeit */}
-          <div>
-            <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Von</label>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="relative">
-                <Clock className="absolute left-3 top-3 text-gray-500" size={18} />
-                <select 
-                  className="w-full bg-[#222222] border border-gray-700 rounded-lg py-3 pl-10 pr-2 text-gray-200 appearance-none focus:outline-none focus:border-yellow-500"
-                  value={startHour}
-                  onChange={(e) => setStartHour(e.target.value)}
-                >
-                  {hours.map((h) => (
-                    <option key={h} value={h}>{h} Uhr</option>
-                  ))}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Von</label>
+              <div className="grid grid-cols-2 gap-1">
+                <select className="bg-[#222222] border border-gray-700 rounded-lg py-3 px-1 text-gray-200 text-xs" value={startHour} onChange={(e) => setStartHour(e.target.value)}>
+                  {hours.map((h) => <option key={h} value={h}>{h}</option>)}
+                </select>
+                <select className="bg-[#222222] border border-gray-700 rounded-lg py-3 px-1 text-gray-200 text-xs text-center" value={startMinute} onChange={(e) => setStartMinute(e.target.value)}>
+                  {minutes.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
-              <div>
-                <select 
-                  className="w-full bg-[#222222] border border-gray-700 rounded-lg py-3 px-4 text-gray-200 appearance-none focus:outline-none focus:border-yellow-500 text-center"
-                  value={startMinute}
-                  onChange={(e) => setStartMinute(e.target.value)}
-                >
-                  {minutes.map((m) => (
-                    <option key={m} value={m}>{m} Min</option>
-                  ))}
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Bis</label>
+              <div className="grid grid-cols-2 gap-1">
+                <select className="bg-[#222222] border border-gray-700 rounded-lg py-3 px-1 text-gray-200 text-xs" value={endHour} onChange={(e) => setEndHour(e.target.value)}>
+                  {hours.map((h) => <option key={h} value={h}>{h}</option>)}
+                </select>
+                <select className="bg-[#222222] border border-gray-700 rounded-lg py-3 px-1 text-gray-200 text-xs text-center" value={endMinute} onChange={(e) => setEndMinute(e.target.value)}>
+                  {minutes.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
             </div>
           </div>
 
-          {/* Bis Uhrzeit */}
-          <div>
-            <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Bis</label>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="relative">
-                <Clock className="absolute left-3 top-3 text-gray-500" size={18} />
-                <select 
-                  className="w-full bg-[#222222] border border-gray-700 rounded-lg py-3 pl-10 pr-2 text-gray-200 appearance-none focus:outline-none focus:border-yellow-500"
-                  value={endHour}
-                  onChange={(e) => setEndHour(e.target.value)}
-                >
-                  {hours.map((h) => (
-                    <option key={h} value={h}>{h} Uhr</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <select 
-                  className="w-full bg-[#222222] border border-gray-700 rounded-lg py-3 px-4 text-gray-200 appearance-none focus:outline-none focus:border-yellow-500 text-center"
-                  value={endMinute}
-                  onChange={(e) => setEndMinute(e.target.value)}
-                >
-                  {minutes.map((m) => (
-                    <option key={m} value={m}>{m} Min</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <button 
-            onClick={handleSave}
-            className="w-full mt-4 bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 rounded-lg transition-all active:scale-95"
-          >
+          <button onClick={handleSave} className="w-full mt-4 bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 rounded-lg transition-all active:scale-95">
             ZEITEN SPEICHERN
           </button>
 
@@ -336,10 +311,7 @@ export default function Home() {
             value={newStudentName} onChange={(e) => setNewStudentName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAddStudent()}
           />
-          <button 
-            onClick={handleAddStudent}
-            className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
-          >
+          <button onClick={handleAddStudent} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm">
             HINZUFÜGEN
           </button>
         </div>
@@ -350,12 +322,12 @@ export default function Home() {
         )}
       </div>
 
-      {/* WOCHENANSICHT (Kalender) */}
-      <div className="max-w-6xl mx-auto bg-[#1a1a1a] p-6 rounded-xl shadow-2xl border border-gray-800">
+      {/* KALENDER MIT ZEIT-RASTER & WOCHENANSICHT (07:00 - 00:00) */}
+      <div className="max-w-7xl mx-auto bg-[#1a1a1a] p-4 sm:p-6 rounded-xl shadow-2xl border border-gray-800 overflow-x-auto">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <div className="flex items-center gap-3">
             <ListTodo className="text-yellow-500" size={24} />
-            <h2 className="text-xl font-bold text-gray-200">WOCHENANSICHT</h2>
+            <h2 className="text-xl font-bold text-gray-200">ZEIT-RASTER KALENDER (07:00 - 00:00)</h2>
             <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full tracking-wider">
               KW {currentKW}
             </span>
@@ -363,92 +335,81 @@ export default function Home() {
           
           {/* Wochen-Navigation */}
           <div className="flex items-center gap-2 bg-[#222222] p-1.5 rounded-lg border border-gray-700">
-            <button 
-              onClick={() => setWeekOffset(weekOffset - 1)}
-              className="p-2 hover:bg-gray-700 rounded text-gray-300 transition-colors flex items-center gap-1 text-xs font-bold"
-              title="Vorherige Woche"
-            >
+            <button onClick={() => setWeekOffset(weekOffset - 1)} className="p-2 hover:bg-gray-700 rounded text-gray-300 transition-colors flex items-center gap-1 text-xs font-bold">
               <ChevronLeft size={16} /> Vorherige
             </button>
-            <button 
-              onClick={() => setWeekOffset(0)}
-              className="px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded text-xs font-bold transition-colors"
-            >
+            <button onClick={() => setWeekOffset(0)} className="px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded text-xs font-bold transition-colors">
               Aktuelle Woche
             </button>
-            <button 
-              onClick={() => setWeekOffset(weekOffset + 1)}
-              className="p-2 hover:bg-gray-700 rounded text-gray-300 transition-colors flex items-center gap-1 text-xs font-bold"
-            >
+            <button onClick={() => setWeekOffset(weekOffset + 1)} className="p-2 hover:bg-gray-700 rounded text-gray-300 transition-colors flex items-center gap-1 text-xs font-bold">
               Nächste <ChevronRight size={16} />
             </button>
           </div>
         </div>
 
-        {/* 7-Tage Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
-          {mounted && weekDays.map((day, idx) => {
-            const dateStr = formatDateString(day);
-            const dayAppointments = appointments.filter((apt) => apt.date === dateStr);
-            const isToday = formatDateString(new Date()) === dateStr;
-
-            return (
-              <div 
-                key={idx} 
-                className={`bg-[#222222] rounded-lg p-3 border flex flex-col ${
-                  isToday ? 'border-yellow-500 shadow-lg shadow-yellow-500/10' : 'border-gray-700/80'
-                }`}
-              >
-                {/* Tageskopf */}
-                <div className="border-b border-gray-700 pb-2 mb-3 text-center">
-                  <p className="text-xs font-bold text-gray-400 uppercase">
-                    {day.toLocaleDateString('de-DE', { weekday: 'short' })}
-                  </p>
-                  <p className={`text-sm font-black ${isToday ? 'text-yellow-500' : 'text-gray-200'}`}>
+        {/* Tabellen-Raster */}
+        <div className="min-w-[800px]">
+          {/* Tabellen-Kopf (Wochentage) */}
+          <div className="grid grid-cols-8 gap-1 mb-2 bg-[#222222] p-2 rounded-lg border border-gray-700">
+            <div className="text-center font-bold text-gray-400 text-xs uppercase flex items-center justify-center">Zeit</div>
+            {weekDays.map((day, idx) => {
+              const isToday = formatDateString(new Date()) === formatDateString(day);
+              return (
+                <div key={idx} className={`text-center py-1 rounded ${isToday ? 'bg-yellow-500/20 border border-yellow-500/50' : ''}`}>
+                  <p className="text-[11px] font-bold text-gray-400 uppercase">{day.toLocaleDateString('de-DE', { weekday: 'short' })}</p>
+                  <p className={`text-xs font-black ${isToday ? 'text-yellow-500' : 'text-gray-200'}`}>
                     {day.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
                   </p>
                 </div>
+              );
+            })}
+          </div>
 
-                {/* Termine */}
-                <div className="space-y-2 flex-1">
-                  {dayAppointments.length === 0 ? (
-                    <p className="text-gray-600 text-xs text-center py-6 italic">Keine Fahrten</p>
-                  ) : (
-                    dayAppointments.map((apt) => (
-                      <div 
-                        key={apt.id} 
-                        className="bg-[#181818] border border-gray-700/60 p-2.5 rounded-md hover:border-yellow-500/50 transition-all text-xs"
-                      >
-                        <div className="flex justify-between items-start mb-1">
-                          <span className="font-bold text-yellow-500 bg-[#111111] px-1.5 py-0.5 rounded text-[11px]">
-                            {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
-                          </span>
-                          <button 
-                            onClick={() => handleDelete(apt.id)}
-                            className="text-gray-500 hover:text-red-400 transition-colors p-0.5"
-                            title="Löschen"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-
-                        <p className="font-bold text-gray-100 mt-1 truncate">{apt.students?.name || "Unbekannt"}</p>
-                        
-                        <div className="flex flex-wrap gap-1 mt-1.5">
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">
-                            {apt.drive_type || 'Übungsfahrt'}
-                          </span>
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400">
-                            🚗 {apt.car || 'Automatik'}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
+          {/* Stunden-Zeilen (Raster 07:00 bis 00:00) */}
+          <div className="space-y-1">
+            {timeSlots.map((slot, sIdx) => (
+              <div key={sIdx} className="grid grid-cols-8 gap-1 items-stretch">
+                {/* Zeitspalte links */}
+                <div className="bg-[#181818] border border-gray-800 rounded p-2 text-center flex items-center justify-center text-xs font-bold text-yellow-500">
+                  {slot}
                 </div>
+
+                {/* 7 Tage Spalten für diese Stunde */}
+                {weekDays.map((day, dIdx) => {
+                  const dateStr = formatDateString(day);
+                  const slotAppointments = getAppointmentsForSlot(dateStr, slot);
+
+                  return (
+                    <div key={dIdx} className="bg-[#1f1f1f] border border-gray-800/80 rounded p-1.5 min-h-[65px] flex flex-col justify-start">
+                      {slotAppointments.length === 0 ? (
+                        <div className="flex-1 flex items-center justify-center">
+                          <span className="text-[10px] text-gray-600 font-mono">frei</span>
+                        </div>
+                      ) : (
+                        slotAppointments.map((apt) => (
+                          <div key={apt.id} className="bg-[#2a2a2a] border border-yellow-500/40 p-1.5 rounded text-[11px] mb-1 shadow-sm">
+                            <div className="flex justify-between items-center mb-0.5">
+                              <span className="font-bold text-yellow-400 text-[10px]">
+                                {formatTime(apt.start_time)}-{formatTime(apt.end_time)}
+                              </span>
+                              <button onClick={() => handleDelete(apt.id)} className="text-gray-500 hover:text-red-400" title="Löschen">
+                                <Trash2 size={11} />
+                              </button>
+                            </div>
+                            <p className="font-bold text-gray-100 truncate">{apt.students?.name}</p>
+                            <div className="flex gap-1 mt-1">
+                              <span className="text-[8px] px-1 rounded bg-black/40 text-gray-300">{apt.drive_type}</span>
+                              <span className="text-[8px] px-1 rounded bg-yellow-500/20 text-yellow-300">🚗 {apt.car}</span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </div>
 
