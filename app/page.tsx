@@ -173,22 +173,17 @@ export default function Home() {
     return timeString.substring(0, 5);
   };
 
-  // Hilfsfunktion: Wandelt "HH:MM" in Minuten seit Mitternacht um für präzisen Vergleich
   const timeToMinutes = (timeStr: string) => {
     if (!timeStr) return 0;
     const parts = timeStr.split(":");
     return parseInt(parts[0]) * 60 + parseInt(parts[1]);
   };
 
-  // Prüfen, ob ein Termin diesen Zeitslot berührt (Start <= Slot < Ende)
-  const getAppointmentsForSlot = (dateStr: string, slotTime: string) => {
-    const slotMin = timeToMinutes(slotTime);
+  // Nur den Termin zurückgeben, der exakt in diesem Slot STARTET
+  const getAppointmentStartingAtSlot = (dateStr: string, slotTime: string) => {
     return appointments.filter((apt) => {
       if (apt.date !== dateStr) return false;
-      const startMin = timeToMinutes(apt.start_time);
-      const endMin = timeToMinutes(apt.end_time);
-      // Der Termin wird in diesem Slot angezeigt, wenn der Slot im Zeitraum liegt
-      return slotMin >= startMin && slotMin < endMin;
+      return formatTime(apt.start_time) === slotTime;
     });
   };
 
@@ -337,7 +332,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* KALENDER MIT 15-MINUTEN RASTER */}
+      {/* KALENDER MIT ZUSAMMENHÄNGENDEN TERMIN-BLÖCKEN */}
       <div className="max-w-7xl mx-auto bg-[#1a1a1a] p-4 sm:p-6 rounded-xl shadow-2xl border border-gray-800 overflow-x-auto">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <div className="flex items-center gap-3">
@@ -351,7 +346,7 @@ export default function Home() {
           {/* Wochen-Navigation */}
           <div className="flex items-center gap-2 bg-[#222222] p-1.5 rounded-lg border border-gray-700">
             <button onClick={() => setWeekOffset(weekOffset - 1)} className="p-2 hover:bg-gray-700 rounded text-gray-300 transition-colors flex items-center gap-1 text-xs font-bold">
-              <ChevronLeft size={16} /> Vorherige
+              <ChevronLeft size5={16} /> Vorherige
             </button>
             <button onClick={() => setWeekOffset(0)} className="px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded text-xs font-bold transition-colors">
               Aktuelle Woche
@@ -402,36 +397,53 @@ export default function Home() {
 
                   {weekDays.map((day, dIdx) => {
                     const dateStr = formatDateString(day);
-                    const slotAppointments = getAppointmentsForSlot(dateStr, time);
+                    // Wir holen nur den Termin, der in DIESEM Slot startet
+                    const startingAppointments = getAppointmentStartingAtSlot(dateStr, time);
 
                     return (
                       <div 
                         key={dIdx} 
-                        className={`rounded px-1.5 py-0.5 flex flex-col justify-start transition-colors ${
+                        className={`rounded px-1.5 py-0.5 flex flex-col justify-start transition-colors relative ${
                           isFullHour 
                             ? 'bg-[#1b1b1b] border border-gray-800' 
                             : 'bg-[#131313] border border-gray-900/40'
                         }`}
                         style={{ minHeight: isFullHour ? '45px' : '30px' }}
                       >
-                        {slotAppointments.length > 0 && (
-                          slotAppointments.map((apt) => (
-                            <div key={apt.id} className="bg-[#2a2a2a] border border-yellow-500/60 p-1.5 rounded text-[11px] my-0.5 shadow-md z-0">
-                              <div className="flex justify-between items-center mb-0.5">
-                                <span className="font-bold text-yellow-400 text-[10px] bg-black/40 px-1 rounded">
-                                  {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
-                                </span>
-                                <button onClick={() => handleDelete(apt.id)} className="text-gray-400 hover:text-red-400 p-0.5" title="Löschen">
-                                  <Trash2 size={12} />
-                                </button>
+                        {startingAppointments.length > 0 && (
+                          startingAppointments.map((apt) => {
+                            // Berechne die genaue Dauer in Minuten
+                            const startMin = timeToMinutes(apt.start_time);
+                            const endMin = timeToMinutes(apt.end_time);
+                            const durationMinutes = Math.max(15, endMin - startMin);
+                            // Jede 15 Minuten entsprechen ca. 30px Höhe (inklusive Abstände)
+                            const heightPx = (durationMinutes / 15) * 32;
+
+                            return (
+                              <div 
+                                key={apt.id} 
+                                className="absolute left-1 right-1 top-0 bg-[#2a2a2a] border-2 border-yellow-500 p-2 rounded shadow-xl z-20 overflow-hidden flex flex-col justify-between"
+                                style={{ height: `${heightPx}px` }}
+                              >
+                                <div>
+                                  <div className="flex justify-between items-center mb-0.5">
+                                    <span className="font-bold text-yellow-400 text-[11px] bg-black/60 px-1.5 py-0.5 rounded">
+                                      {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
+                                    </span>
+                                    <button onClick={() => handleDelete(apt.id)} className="text-gray-400 hover:text-red-400 p-0.5" title="Löschen">
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </div>
+                                  <p className="font-extrabold text-white truncate text-xs mt-1">{apt.students?.name}</p>
+                                </div>
+                                
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/60 text-gray-300 font-medium">{apt.drive_type}</span>
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 font-medium">🚗 {apt.car}</span>
+                                </div>
                               </div>
-                              <p className="font-extrabold text-white truncate text-xs">{apt.students?.name}</p>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                <span className="text-[9px] px-1 rounded bg-black/50 text-gray-300 font-medium">{apt.drive_type}</span>
-                                <span className="text-[9px] px-1 rounded bg-yellow-500/20 text-yellow-300 font-medium">🚗 {apt.car}</span>
-                              </div>
-                            </div>
-                          ))
+                            );
+                          })
                         )}
                       </div>
                     );
