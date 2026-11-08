@@ -79,6 +79,14 @@ export default function Home() {
   const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
   const minutes = ["00", "15", "30", "45"];
 
+  // Hilfsfunktion: Wandelt YYYY-MM-DD in DD.MM.YYYY um
+  const formatDateGerman = (dateString: string) => {
+    if (!dateString) return "Nicht angegeben";
+    const parts = dateString.split("-");
+    if (parts.length !== 3) return dateString;
+    return `${parts[2]}.${parts[1]}.${parts[0]}`;
+  };
+
   // 2. Daten laden
   const fetchData = async () => {
     const { data: studentData } = await supabase.from("students").select("*").order("name", { ascending: true });
@@ -550,7 +558,6 @@ export default function Home() {
               value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
             />
           </div>
-          {/* FRISTEN GEETAUSCHT: Zulassung zuerst, dann Theorie */}
           <div className="grid grid-cols-2 gap-2 bg-[#f7f5f0] p-2 rounded-lg border border-zinc-200">
             <div>
               <label className="block text-[10px] font-bold text-zinc-500 uppercase">Zulassung bis</label>
@@ -816,7 +823,7 @@ export default function Home() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <span className="block text-[10px] font-bold text-zinc-400 uppercase">Geburtsdatum</span>
-                  <p className="font-semibold text-zinc-800">{viewingStudent.birth_date || "Nicht angegeben"}</p>
+                  <p className="font-semibold text-zinc-800">{formatDateGerman(viewingStudent.birth_date)}</p>
                 </div>
                 <div>
                   <span className="block text-[10px] font-bold text-zinc-400 uppercase">Telefon</span>
@@ -845,15 +852,14 @@ export default function Home() {
                 <p className="font-semibold text-zinc-800 flex items-center gap-1"><Building2 size={13}/> {viewingStudent.school_or_workplace || "Nicht angegeben"}</p>
               </div>
 
-              {/* FRISTEN GEETAUSCHT IN DER ANSICHT */}
               <div className="grid grid-cols-2 gap-3 border-t border-zinc-200 pt-3">
                 <div>
                   <span className="block text-[10px] font-bold text-red-600 uppercase">Zulassung Frist</span>
-                  <p className="font-bold text-zinc-900">{viewingStudent.license_application_expiry || "Kein Datum"}</p>
+                  <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.license_application_expiry)}</p>
                 </div>
                 <div>
                   <span className="block text-[10px] font-bold text-red-600 uppercase">Theorie-Prüfung Ablauf</span>
-                  <p className="font-bold text-zinc-900">{viewingStudent.theory_exam_expiry || "Kein Datum"}</p>
+                  <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.theory_exam_expiry)}</p>
                 </div>
               </div>
 
@@ -989,7 +995,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* FRISTEN GEETAUSCHT IM BEARBEITEN-MODAL */}
               <div className="grid grid-cols-2 gap-2 bg-[#f7f5f0] p-2 rounded border border-zinc-200">
                 <div>
                   <label className="block text-[10px] font-bold text-red-600 uppercase">Zulassung bis</label>
@@ -1133,7 +1138,7 @@ export default function Home() {
                       {hours.map((h) => <option key={h} value={h}>{h}</option>)}
                     </select>
                     <select className="bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-1 text-zinc-800 text-xs text-center" value={editStartMinute} onChange={(e) => setEditStartMinute(e.target.value)}>
-                      {minutes.map((m) => <option key={m} value={m}>{m}</option>)}
+                      {minutes.map((m) => <option key={m} value= {m}>{m}</option>)}
                     </select>
                   </div>
                 </div>
