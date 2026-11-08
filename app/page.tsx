@@ -346,7 +346,7 @@ export default function Home() {
           {/* Wochen-Navigation */}
           <div className="flex items-center gap-2 bg-[#222222] p-1.5 rounded-lg border border-gray-700">
             <button onClick={() => setWeekOffset(weekOffset - 1)} className="p-2 hover:bg-gray-700 rounded text-gray-300 transition-colors flex items-center gap-1 text-xs font-bold">
-              <ChevronLeft size5={16} /> Vorherige
+              <ChevronLeft size={16} /> Vorherige
             </button>
             <button onClick={() => setWeekOffset(0)} className="px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded text-xs font-bold transition-colors">
               Aktuelle Woche
