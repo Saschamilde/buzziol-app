@@ -179,48 +179,32 @@ export default function Home() {
     return parseInt(parts[0]) * 60 + parseInt(parts[1]);
   };
 
-  // Styling je nach Auto und Fahrtart (mit Autobahn-Blau, Überland-Grün, Nachtfahrt-Gelb)
-  const getCardStyles = (carName: string, driveType: string) => {
-    let baseStyle = {
-      bg: "bg-[#27272a]",
-      border: "border-zinc-500",
-      text: "text-white",
-      timeBg: "bg-black/50 text-yellow-400"
-    };
-
+  // Design: Rand = Auto, Hintergrund = Art der Übungsstunde (Standard in Orange)
+  const getCardDesign = (carName: string, driveType: string) => {
+    // 1. Dichter Außenrahmen (Fahrzeug)
+    let borderStyle = "border-4 border-[#3f3f46]"; // Fallback Cupra-Grau
     if (carName === "Schalter") {
-      baseStyle = {
-        bg: "bg-[#e5e7eb]",
-        border: "border-white",
-        text: "text-gray-900",
-        timeBg: "bg-gray-300 text-gray-900"
-      };
-    } else if (carName === "Motorrad") {
-      baseStyle = {
-        bg: "bg-[#321a1a]",
-        border: "border-red-500",
-        text: "text-white",
-        timeBg: "bg-black/60 text-red-400"
-      };
+      borderStyle = "border-4 border-white shadow-lg"; // Clean Weißer dicker Rand
+    } else if (carName === "Automatik") {
+      borderStyle = "border-4 border-[#3f3f46]"; // Cupra-Grau dicker Rand
     }
 
-    // Fahrtenart-Badges mit deinen Wunschfarben
-    let badgeStyle = "bg-black/40 text-gray-300";
-    if (carName === "Schalter") {
-      badgeStyle = "bg-gray-300 text-gray-800";
-    }
+    // 2. Hintergrundfarbe & Textfarbe (Art der Fahrt)
+    let bgStyle = "bg-orange-600 text-white"; // Standard Übungsfahrt in kräftigem Orange
+    let timeTextBg = "bg-black/30 text-white font-bold";
 
-    if (driveType === "Prüfung") {
-      badgeStyle = "bg-red-600 text-white font-black animate-pulse";
-    } else if (driveType === "Autobahnfahrt") {
-      badgeStyle = "bg-blue-600 text-white font-bold"; // Autobahn-Blau
+    if (driveType === "Autobahnfahrt") {
+      bgStyle = "bg-blue-700 text-white"; // Autobahn-Blau
     } else if (driveType === "Überlandfahrt") {
-      badgeStyle = "bg-green-600 text-white font-bold"; // Überland-Grün (Natur)
+      bgStyle = "bg-green-700 text-white"; // Überland-Grün
     } else if (driveType === "Nachtfahrt") {
-      badgeStyle = "bg-yellow-400 text-black font-bold"; // Nachtfahrt-Gelb
+      bgStyle = "bg-yellow-400 text-black"; // Nachtfahrt-Gelb
+      timeTextBg = "bg-black/20 text-black font-bold";
+    } else if (driveType === "Prüfung") {
+      bgStyle = "bg-red-700 text-white animate-pulse"; // Prüfung-Rot
     }
 
-    return { ...baseStyle, badgeStyle };
+    return { borderStyle, bgStyle, timeTextBg };
   };
 
   return (
@@ -271,7 +255,6 @@ export default function Home() {
               >
                 <option value="Automatik">Automatik</option>
                 <option value="Schalter">Schalter</option>
-                <option value="Motorrad">Motorrad</option>
               </select>
             </div>
           </div>
@@ -368,7 +351,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* KALENDER MIT SCHILDER-FARBEN */}
+      {/* KALENDER */}
       <div className="max-w-7xl mx-auto bg-[#1a1a1a] p-4 sm:p-6 rounded-xl shadow-2xl border border-gray-800 overflow-x-auto">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <div className="flex items-center gap-3">
@@ -461,32 +444,32 @@ export default function Home() {
                       const topPx = slotIndex * 34;
                       const heightPx = slotSpan * 34 - 2;
 
-                      const style = getCardStyles(apt.car, apt.drive_type);
+                      const design = getCardDesign(apt.car, apt.drive_type);
 
                       return (
                         <div 
                           key={apt.id} 
-                          className={`absolute left-1 right-1 border-2 p-1.5 rounded shadow-xl z-20 overflow-hidden flex flex-col justify-between ${style.bg} ${style.border}`}
+                          className={`absolute left-1 right-1 p-2 rounded-lg shadow-2xl z-20 overflow-hidden flex flex-col justify-between ${design.borderStyle} ${design.bgStyle}`}
                           style={{ 
                             top: `${topPx}px`, 
                             height: `${heightPx}px` 
                           }}
                         >
                           <div>
-                            <div className="flex justify-between items-center mb-0.5">
-                              <span className={`font-bold text-[10px] px-1 rounded ${style.timeBg}`}>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className={`font-bold text-[10px] px-1.5 py-0.5 rounded ${design.timeTextBg}`}>
                                 {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
                               </span>
-                              <button onClick={() => handleDelete(apt.id)} className="text-gray-500 hover:text-red-600 p-0.5" title="Löschen">
-                                <Trash2 size={11} />
+                              <button onClick={() => handleDelete(apt.id)} className="text-current opacity-70 hover:opacity-100 p-0.5" title="Löschen">
+                                <Trash2 size={13} />
                               </button>
                             </div>
-                            <p className={`font-extrabold truncate text-xs ${style.text}`}>{apt.students?.name}</p>
+                            <p className="font-black text-sm truncate tracking-tight">{apt.students?.name}</p>
                           </div>
                           
-                          <div className="flex flex-wrap gap-1">
-                            <span className={`text-[8px] px-1.5 py-0.5 rounded ${style.badgeStyle}`}>{apt.drive_type}</span>
-                            <span className="text-[8px] px-1 rounded font-medium bg-black/30 text-gray-300">🚗 {apt.car}</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/40 text-white font-bold">{apt.drive_type}</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/40 text-white font-bold">🚗 {apt.car}</span>
                           </div>
                         </div>
                       );
