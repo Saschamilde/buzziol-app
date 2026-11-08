@@ -15,7 +15,9 @@ export default function Home() {
   
   // Zustände für neuen Schüler anlegen
   const [newStudentName, setNewStudentName] = useState("");
-  const [newAddress, setNewAddress] = useState("");
+  const [newStreet, setNewStreet] = useState("");
+  const [newPostalCode, setNewPostalCode] = useState("");
+  const [newCity, setNewCity] = useState("");
   const [newSchoolWork, setNewSchoolWork] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -100,7 +102,9 @@ export default function Home() {
     setStudentStatus("Wird gespeichert...");
     const { error } = await supabase.from("students").insert([{ 
       name: newStudentName.trim(),
-      address: newAddress.trim() || null,
+      street: newStreet.trim() || null,
+      postal_code: newPostalCode.trim() || null,
+      city: newCity.trim() || null,
       school_or_workplace: newSchoolWork.trim() || null,
       phone: newPhone.trim() || null,
       email: newEmail.trim() || null,
@@ -116,7 +120,9 @@ export default function Home() {
     } else {
       setStudentStatus("Schüler hinzugefügt! ✅");
       setNewStudentName("");
-      setNewAddress("");
+      setNewStreet("");
+      setNewPostalCode("");
+      setNewCity("");
       setNewSchoolWork("");
       setNewPhone("");
       setNewEmail("");
@@ -138,7 +144,9 @@ export default function Home() {
       .from("students")
       .update({
         name: editStudentProfile.name,
-        address: editStudentProfile.address,
+        street: editStudentProfile.street,
+        postal_code: editStudentProfile.postal_code,
+        city: editStudentProfile.city,
         school_or_workplace: editStudentProfile.school_or_workplace,
         phone: editStudentProfile.phone,
         email: editStudentProfile.email,
@@ -506,11 +514,26 @@ export default function Home() {
               <span className="text-xs font-bold text-zinc-700 flex items-center gap-1"><Eye size={14}/> Sehhilfe</span>
             </label>
           </div>
+
+          {/* NEUE ADRESSTRUKTUR: Straße + Hausnummer, PLZ & Ort */}
           <input 
-            type="text" placeholder="Adresse (Straße, Hausnr., Ort)"
+            type="text" placeholder="Straße + Hausnummer"
             className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-3 text-zinc-800 text-xs focus:outline-none focus:border-yellow-600"
-            value={newAddress} onChange={(e) => setNewAddress(e.target.value)}
+            value={newStreet} onChange={(e) => setNewStreet(e.target.value)}
           />
+          <div className="grid grid-cols-3 gap-2">
+            <input 
+              type="text" placeholder="PLZ"
+              className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-3 text-zinc-800 text-xs focus:outline-none focus:border-yellow-600"
+              value={newPostalCode} onChange={(e) => setNewPostalCode(e.target.value)}
+            />
+            <input 
+              type="text" placeholder="Ort"
+              className="col-span-2 w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-3 text-zinc-800 text-xs focus:outline-none focus:border-yellow-600"
+              value={newCity} onChange={(e) => setNewCity(e.target.value)}
+            />
+          </div>
+
           <input 
             type="text" placeholder="Arbeitsort / Schule"
             className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-3 text-zinc-800 text-xs focus:outline-none focus:border-yellow-600"
@@ -808,7 +831,12 @@ export default function Home() {
                 </div>
                 <div>
                   <span className="block text-[10px] font-bold text-zinc-400 uppercase">Adresse</span>
-                  <p className="font-semibold text-zinc-800 flex items-center gap-1"><MapPinned size={13}/> {viewingStudent.address || "Nicht angegeben"}</p>
+                  <p className="font-semibold text-zinc-800 flex items-center gap-1">
+                    <MapPinned size={13}/> 
+                    {viewingStudent.street || viewingStudent.postal_code || viewingStudent.city 
+                      ? `${viewingStudent.street || ''}, ${viewingStudent.postal_code || ''} ${viewingStudent.city || ''}`
+                      : "Nicht angegeben"}
+                  </p>
                 </div>
               </div>
 
@@ -899,14 +927,35 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* BEARBEITEN - NEUE ADRESSTRUKTUR */}
               <div>
-                <label className="block text-[10px] font-bold text-zinc-500 uppercase">Adresse</label>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase">Straße + Hausnummer</label>
                 <input 
                   type="text" 
                   className="w-full bg-[#f4f2ec] border border-zinc-300 rounded py-2 px-3 text-zinc-800 text-xs"
-                  value={editStudentProfile.address || ""} 
-                  onChange={(e) => setEditStudentProfile({...editStudentProfile, address: e.target.value})}
+                  value={editStudentProfile.street || ""} 
+                  onChange={(e) => setEditStudentProfile({...editStudentProfile, street: e.target.value})}
                 />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase">PLZ</label>
+                  <input 
+                    type="text" 
+                    className="w-full bg-[#f4f2ec] border border-zinc-300 rounded py-2 px-2 text-zinc-800 text-xs"
+                    value={editStudentProfile.postal_code || ""} 
+                    onChange={(e) => setEditStudentProfile({...editStudentProfile, postal_code: e.target.value})}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase">Ort</label>
+                  <input 
+                    type="text" 
+                    className="w-full bg-[#f4f2ec] border border-zinc-300 rounded py-2 px-2 text-zinc-800 text-xs"
+                    value={editStudentProfile.city || ""} 
+                    onChange={(e) => setEditStudentProfile({...editStudentProfile, city: e.target.value})}
+                  />
+                </div>
               </div>
 
               <div>
