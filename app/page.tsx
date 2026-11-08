@@ -173,13 +173,22 @@ export default function Home() {
     return timeString.substring(0, 5);
   };
 
-  // Robustere Prüfung: Zeige den Termin im exakten 15-Minuten-Slot an
+  // Hilfsfunktion: Wandelt "HH:MM" in Minuten seit Mitternacht um für präzisen Vergleich
+  const timeToMinutes = (timeStr: string) => {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(":");
+    return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+  };
+
+  // Prüfen, ob ein Termin diesen Zeitslot berührt (Start <= Slot < Ende)
   const getAppointmentsForSlot = (dateStr: string, slotTime: string) => {
+    const slotMin = timeToMinutes(slotTime);
     return appointments.filter((apt) => {
       if (apt.date !== dateStr) return false;
-      // Vergleiche direkt den formatierten Start-String (z.B. "08:15") mit dem Slot
-      const aptTimeFormatted = formatTime(apt.start_time);
-      return aptTimeFormatted === slotTime;
+      const startMin = timeToMinutes(apt.start_time);
+      const endMin = timeToMinutes(apt.end_time);
+      // Der Termin wird in diesem Slot angezeigt, wenn der Slot im Zeitraum liegt
+      return slotMin >= startMin && slotMin < endMin;
     });
   };
 
