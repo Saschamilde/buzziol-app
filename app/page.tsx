@@ -179,15 +179,17 @@ export default function Home() {
     return parseInt(parts[0]) * 60 + parseInt(parts[1]);
   };
 
-  // Design: Rand = Auto, Hintergrund = Art der Übungsstunde
+  // Design: Dicker Außenrand = Auto (Blau/Anthrazit für Automatik, Weiß für Schalter) | Hintergrund = Art der Übungsstunde
   const getCardDesign = (carName: string, driveType: string) => {
-    let borderStyle = "border-4 border-[#27272a]"; // Fallback Rahmen
+    // 1. Dicker Außenrahmen für das Fahrzeug
+    let borderStyle = "border-4 border-blue-600 shadow-xl"; // Fallback
     if (carName === "Schalter") {
-      borderStyle = "border-4 border-zinc-900 shadow-md"; // Dunkler, edler Rand für Schalter auf Creme
+      borderStyle = "border-[5px] border-white shadow-2xl"; // Sehr dicker, weißer Rahmen für Schalter
     } else if (carName === "Automatik") {
-      borderStyle = "border-4 border-[#3f3f46]"; // Cupra-Grau dicker Rand
+      borderStyle = "border-[5px] border-blue-900 shadow-2xl"; // Dickes Tech-Blau/Anthrazit für Automatik
     }
 
+    // 2. Hintergrundfarbe & Textfarbe (Art der Fahrt)
     let bgStyle = "bg-orange-500 text-white"; // Standard Übungsfahrt in Orange
     let timeTextBg = "bg-black/30 text-white font-bold";
 
@@ -447,7 +449,7 @@ export default function Home() {
                       return (
                         <div 
                           key={apt.id} 
-                          className={`absolute left-1 right-1 p-2 rounded-lg shadow-xl z-20 overflow-hidden flex flex-col justify-between ${design.borderStyle} ${design.bgStyle}`}
+                          className={`absolute left-1 right-1 p-2 rounded-lg z-20 overflow-hidden flex flex-col justify-between ${design.borderStyle} ${design.bgStyle}`}
                           style={{ 
                             top: `${topPx}px`, 
                             height: `${heightPx}px` 
