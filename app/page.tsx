@@ -17,13 +17,19 @@ export default function Home() {
   const [newStudentName, setNewStudentName] = useState("");
   const [studentStatus, setStudentStatus] = useState("");
 
-  // Zustände für Termin-Formular
+  // Zustände für Termin-Formular (getrennt nach Stunde und Minute für 15-Minuten-Takt)
   const [selectedStudent, setSelectedStudent] = useState("");
   const [date, setDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [startHour, setStartHour] = useState("08");
+  const [startMinute, setStartMinute] = useState("00");
+  const [endHour, setEndHour] = useState("09");
+  const [endMinute, setEndMinute] = useState("00");
   const [driveType, setDriveType] = useState("Übungsfahrt");
   const [status, setStatus] = useState("");
+
+  // Verfügbare Stunden (06 bis 21 Uhr) und Minuten-Schritte (15 Min)
+  const hours = Array.from({ length: 16 }, (_, i) => String(i + 6).padStart(2, "0"));
+  const minutes = ["00", "15", "30", "45"];
 
   // 2. Daten laden
   const fetchData = async () => {
@@ -64,10 +70,14 @@ export default function Home() {
 
   // 4. Termin speichern
   const handleSave = async () => {
-    if (!selectedStudent || !date || !startTime || !endTime) {
-      setStatus("Bitte fülle alle Felder aus!");
+    if (!selectedStudent || !date) {
+      setStatus("Bitte Schüler und Datum ausfüllen!");
       return;
     }
+
+    const startTime = `${startHour}:${startMinute}`;
+    const endTime = `${endHour}:${endMinute}`;
+
     setStatus("Wird gespeichert...");
     const { error } = await supabase.from("availabilities").insert([
       { 
@@ -84,8 +94,6 @@ export default function Home() {
     } else {
       setStatus("Termin erfolgreich gespeichert! ✅");
       setDate("");
-      setStartTime("");
-      setEndTime("");
       setDriveType("Übungsfahrt");
       fetchData();
       setTimeout(() => setStatus(""), 3000);
@@ -185,31 +193,62 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Von</label>
+          {/* Von Uhrzeit (Stunde : Minute) */}
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Von</label>
+            <div className="grid grid-cols-2 gap-2">
               <div className="relative">
                 <Clock className="absolute left-3 top-3 text-gray-500" size={18} />
-                <input 
-                  type="time" 
-                  step="900"
-                  className="w-full bg-[#222222] border border-gray-700 rounded-lg py-3 pl-10 pr-2 text-gray-200 focus:outline-none focus:border-yellow-500"
-                  value={startTime} 
-                  onChange={(e) => setStartTime(e.target.value)}
-                />
+                <select 
+                  className="w-full bg-[#222222] border border-gray-700 rounded-lg py-3 pl-10 pr-2 text-gray-200 appearance-none focus:outline-none focus:border-yellow-500"
+                  value={startHour}
+                  onChange={(e) => setStartHour(e.target.value)}
+                >
+                  {hours.map((h) => (
+                    <option key={h} value={h}>{h} Uhr</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <select 
+                  className="w-full bg-[#222222] border border-gray-700 rounded-lg py-3 px-4 text-gray-200 appearance-none focus:outline-none focus:border-yellow-500 text-center"
+                  value={startMinute}
+                  onChange={(e) => setStartMinute(e.target.value)}
+                >
+                  {minutes.map((m) => (
+                    <option key={m} value={m}>{m} Min</option>
+                  ))}
+                </select>
               </div>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Bis</label>
+          </div>
+
+          {/* Bis Uhrzeit (Stunde : Minute) */}
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Bis</label>
+            <div className="grid grid-cols-2 gap-2">
               <div className="relative">
                 <Clock className="absolute left-3 top-3 text-gray-500" size={18} />
-                <input 
-                  type="time" 
-                  step="900"
-                  className="w-full bg-[#222222] border border-gray-700 rounded-lg py-3 pl-10 pr-2 text-gray-200 focus:outline-none focus:border-yellow-500"
-                  value={endTime} 
-                  onChange={(e) => setEndTime(e.target.value)}
-                />
+                <select 
+                  className="w-full bg-[#222222] border border-gray-700 rounded-lg py-3 pl-10 pr-2 text-gray-200 appearance-none focus:outline-none focus:border-yellow-500"
+                  value={endHour}
+                  onChange={(e) => setEndHour(e.target.value)}
+                >
+                  {hours.map((h) => (
+                    <option key={h} value={h}>{h} Uhr</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <select 
+                  className="w-full bg-[#222222] border border-gray-700 rounded-lg py-3 px-4 text-gray-200 appearance-none focus:outline-none focus:border-yellow-500 text-center"
+                  value={endMinute}
+                  onChange={(e) => setEndMinute(e.target.value)}
+                >
+                  {minutes.map((m) => (
+                    <option key={m} value={m}>{m} Min</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
