@@ -179,14 +179,6 @@ export default function Home() {
     return parseInt(parts[0]) * 60 + parseInt(parts[1]);
   };
 
-  // Nur den Termin zurückgeben, der exakt in diesem Slot STARTET
-  const getAppointmentStartingAtSlot = (dateStr: string, slotTime: string) => {
-    return appointments.filter((apt) => {
-      if (apt.date !== dateStr) return false;
-      return formatTime(apt.start_time) === slotTime;
-    });
-  };
-
   return (
     <div className="min-h-screen bg-[#111111] text-white p-4 font-sans pb-20">
       {/* Header */}
@@ -332,7 +324,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* KALENDER MIT ZUSAMMENHÄNGENDEN TERMIN-BLÖCKEN */}
+      {/* KUGELSICHERER KALENDER MIT FESTER HÖHENBERECHNUNG (34px PRO SLOT) */}
       <div className="max-w-7xl mx-auto bg-[#1a1a1a] p-4 sm:p-6 rounded-xl shadow-2xl border border-gray-800 overflow-x-auto">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <div className="flex items-center gap-3">
@@ -358,96 +350,102 @@ export default function Home() {
         </div>
 
         {/* Tabellen-Raster */}
-        <div className="min-w-[850px]">
-          {/* Tabellen-Kopf (Wochentage) */}
-          <div className="grid grid-cols-8 gap-1 mb-2 bg-[#222222] p-2 rounded-lg border border-gray-700 sticky top-0 z-10">
-            <div className="text-center font-bold text-gray-400 text-xs uppercase flex items-center justify-center">Zeit</div>
-            {weekDays.map((day, idx) => {
-              const isToday = formatDateString(new Date()) === formatDateString(day);
-              return (
-                <div key={idx} className={`text-center py-1 rounded ${isToday ? 'bg-yellow-500/20 border border-yellow-500/50' : ''}`}>
-                  <p className="text-[11px] font-bold text-gray-400 uppercase">{day.toLocaleDateString('de-DE', { weekday: 'short' })}</p>
-                  <p className={`text-xs font-black ${isToday ? 'text-yellow-500' : 'text-gray-200'}`}>
-                    {day.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
-                  </p>
-                </div>
-              );
-            })}
+        <div className="min-w-[850px] flex">
+          {/* Feste Zeitspalte links */}
+          <div className="w-20 shrink-0 flex flex-col pt-[53px]">
+            {timeSlots.map((slotObj, sIdx) => (
+              <div 
+                key={sIdx} 
+                className={`flex items-center justify-center text-center border-r border-b ${
+                  slotObj.isFullHour 
+                    ? 'bg-[#222222] border-gray-600 text-yellow-400 font-black text-xs' 
+                    : 'bg-[#151515] border-gray-800 text-gray-500 font-normal text-[10px]'
+                }`}
+                style={{ height: '34px' }}
+              >
+                {slotObj.time}
+              </div>
+            ))}
           </div>
 
-          {/* 15-Minuten-Zeilen */}
-          <div className="space-y-[2px]">
-            {timeSlots.map((slotObj, sIdx) => {
-              const { time, isFullHour } = slotObj;
+          {/* 7 Wochentage Spalten */}
+          <div className="grid grid-cols-7 flex-1 gap-1">
+            {weekDays.map((day, dIdx) => {
+              const dateStr = formatDateString(day);
+              const dayAppointments = appointments.filter((apt) => apt.date === dateStr);
+              const isToday = formatDateString(new Date()) === dateStr;
 
               return (
-                <div 
-                  key={sIdx} 
-                  className={`grid grid-cols-8 gap-1 items-stretch ${
-                    isFullHour ? 'border-t border-gray-600/60 pt-[2px]' : ''
-                  }`}
-                >
-                  <div className={`border rounded p-1 text-center flex items-center justify-center ${
-                    isFullHour 
-                      ? 'bg-[#222222] border-gray-600 text-yellow-400 font-black text-xs shadow-inner' 
-                      : 'bg-[#151515] border-gray-800 text-gray-500 font-normal text-[10px]'
-                  }`}>
-                    {time}
+                <div key={dIdx} className="flex flex-col">
+                  {/* Tageskopf */}
+                  <div className={`text-center py-2 mb-2 rounded border ${isToday ? 'bg-yellow-500/20 border-yellow-500/50' : 'bg-[#222222] border-gray-700'}`}>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase">
+                      {day.toLocaleDateString('de-DE', { weekday: 'short' })}
+                    </p>
+                    <p className={`text-xs font-black ${isToday ? 'text-yellow-500' : 'text-gray-200'}`}>
+                      {day.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+                    </p>
                   </div>
 
-                  {weekDays.map((day, dIdx) => {
-                    const dateStr = formatDateString(day);
-                    // Wir holen nur den Termin, der in DIESEM Slot startet
-                    const startingAppointments = getAppointmentStartingAtSlot(dateStr, time);
-
-                    return (
+                  {/* Container für die Slots und absolut positionierte Termine */}
+                  <div className="relative flex flex-col bg-[#131313] border border-gray-800 rounded">
+                    {/* Hintergrund-Linien für jeden 15-Minuten-Slot (exakt 34px Höhe) */}
+                    {timeSlots.map((slotObj, sIdx) => (
                       <div 
-                        key={dIdx} 
-                        className={`rounded px-1.5 py-0.5 flex flex-col justify-start transition-colors relative ${
-                          isFullHour 
-                            ? 'bg-[#1b1b1b] border border-gray-800' 
-                            : 'bg-[#131313] border border-gray-900/40'
+                        key={sIdx} 
+                        className={`w-full border-b ${
+                          slotObj.isFullHour 
+                            ? 'border-gray-600 bg-[#1b1b1b]' 
+                            : 'border-gray-800/50 bg-[#131313]'
                         }`}
-                        style={{ minHeight: isFullHour ? '45px' : '30px' }}
-                      >
-                        {startingAppointments.length > 0 && (
-                          startingAppointments.map((apt) => {
-                            // Berechne die genaue Dauer in Minuten
-                            const startMin = timeToMinutes(apt.start_time);
-                            const endMin = timeToMinutes(apt.end_time);
-                            const durationMinutes = Math.max(15, endMin - startMin);
-                            // Jede 15 Minuten entsprechen ca. 30px Höhe (inklusive Abstände)
-                            const heightPx = (durationMinutes / 15) * 32;
+                        style={{ height: '34px' }}
+                      />
+                    ))}
 
-                            return (
-                              <div 
-                                key={apt.id} 
-                                className="absolute left-1 right-1 top-0 bg-[#2a2a2a] border-2 border-yellow-500 p-2 rounded shadow-xl z-20 overflow-hidden flex flex-col justify-between"
-                                style={{ height: `${heightPx}px` }}
-                              >
-                                <div>
-                                  <div className="flex justify-between items-center mb-0.5">
-                                    <span className="font-bold text-yellow-400 text-[11px] bg-black/60 px-1.5 py-0.5 rounded">
-                                      {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
-                                    </span>
-                                    <button onClick={() => handleDelete(apt.id)} className="text-gray-400 hover:text-red-400 p-0.5" title="Löschen">
-                                      <Trash2 size={13} />
-                                    </button>
-                                  </div>
-                                  <p className="font-extrabold text-white truncate text-xs mt-1">{apt.students?.name}</p>
-                                </div>
-                                
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/60 text-gray-300 font-medium">{apt.drive_type}</span>
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 font-medium">🚗 {apt.car}</span>
-                                </div>
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    );
-                  })}
+                    {/* Termine absolut platziert basierend auf exakten Pixeln */}
+                    {dayAppointments.map((apt) => {
+                      const startMin = timeToMinutes(apt.start_time);
+                      const endMin = timeToMinutes(apt.end_time);
+
+                      // Startzeit ab 07:00 Uhr (420 Minuten)
+                      const startOffsetMin = startMin - (7 * 60);
+                      const slotIndex = startOffsetMin / 15;
+                      const durationMin = Math.max(15, endMin - startMin);
+                      const slotSpan = durationMin / 15;
+
+                      // Exakte Pixelberechnung: 34px pro Slot
+                      const topPx = slotIndex * 34;
+                      const heightPx = slotSpan * 34 - 2; // -2px für sauberen Randabstand
+
+                      return (
+                        <div 
+                          key={apt.id} 
+                          className="absolute left-1 right-1 bg-[#2a2a2a] border-2 border-yellow-500 p-1.5 rounded shadow-xl z-20 overflow-hidden flex flex-col justify-between"
+                          style={{ 
+                            top: `${topPx}px`, 
+                            height: `${heightPx}px` 
+                          }}
+                        >
+                          <div>
+                            <div className="flex justify-between items-center mb-0.5">
+                              <span className="font-bold text-yellow-400 text-[10px] bg-black/60 px-1 rounded">
+                                {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
+                              </span>
+                              <button onClick={() => handleDelete(apt.id)} className="text-gray-400 hover:text-red-400 p-0.5" title="Löschen">
+                                <Trash2 size={11} />
+                              </button>
+                            </div>
+                            <p className="font-extrabold text-white truncate text-xs">{apt.students?.name}</p>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-1">
+                            <span className="text-[8px] px-1 rounded bg-black/60 text-gray-300 font-medium">{apt.drive_type}</span>
+                            <span className="text-[8px] px-1 rounded bg-yellow-500/20 text-yellow-300 font-medium">🚗 {apt.car}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
