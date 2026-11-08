@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { User, Clock, CalendarDays, Calendar as CalendarIcon, ListTodo, Car, UserPlus, Trash2, KeyRound, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { User, Clock, CalendarDays, Calendar as CalendarIcon, ListTodo, Car, UserPlus, Trash2, KeyRound, ChevronLeft, ChevronRight, MapPin, Pencil, X } from "lucide-react";
 
 // 1. Supabase Verbindung
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -28,6 +28,18 @@ export default function Home() {
   const [car, setCar] = useState("Automatik");
   const [pickupLocation, setPickupLocation] = useState("Fahrschule");
   const [status, setStatus] = useState("");
+
+  // Zustände für das Bearbeiten-Modal
+  const [editingApt, setEditingApt] = useState<any>(null);
+  const [editStudentId, setEditStudentId] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editStartHour, setEditStartHour] = useState("08");
+  const [editStartMinute, setEditStartMinute] = useState("00");
+  const [editEndHour, setEditEndHour] = useState("09");
+  const [editEndMinute, setEditEndMinute] = useState("00");
+  const [editDriveType, setEditDriveType] = useState("Übungsfahrt");
+  const [editCar, setEditCar] = useState("Automatik");
+  const [editPickupLocation, setEditPickupLocation] = useState("Fahrschule");
 
   // Zustand für die angezeigte Woche
   const [weekOffset, setWeekOffset] = useState(0);
@@ -129,6 +141,50 @@ export default function Home() {
     if (error) {
       alert("Fehler beim Löschen: " + error.message);
     } else {
+      fetchData();
+    }
+  };
+
+  // 6. Bearbeiten Modal öffnen und Werte vorbefüllen
+  const openEditModal = (apt: any) => {
+    setEditingApt(apt);
+    setEditStudentId(apt.student_id);
+    setEditDate(apt.date);
+    const [sH, sM] = apt.start_time ? apt.start_time.split(":") : ["08", "00"];
+    const [eH, eM] = apt.end_time ? apt.end_time.split(":") : ["09", "00"];
+    setEditStartHour(sH);
+    setEditStartMinute(sM);
+    setEditEndHour(eH);
+    setEditEndMinute(eM);
+    setEditDriveType(apt.drive_type || "Übungsfahrt");
+    setEditCar(apt.car || "Automatik");
+    setEditPickupLocation(apt.pickup_location || "Fahrschule");
+  };
+
+  // 7. Termin aktualisieren
+  const handleUpdate = async () => {
+    if (!editingApt) return;
+
+    const startTime = `${editStartHour}:${editStartMinute}`;
+    const endTime = `${editEndHour}:${editEndMinute}`;
+
+    const { error } = await supabase
+      .from("availabilities")
+      .update({
+        student_id: editStudentId,
+        date: editDate,
+        start_time: startTime,
+        end_time: endTime,
+        drive_type: editDriveType,
+        car: editCar,
+        pickup_location: editPickupLocation,
+      })
+      .eq("id", editingApt.id);
+
+    if (error) {
+      alert("Fehler beim Aktualisieren: " + error.message);
+    } else {
+      setEditingApt(null);
       fetchData();
     }
   };
@@ -419,7 +475,6 @@ export default function Home() {
               </div>
             ))}
 
-            {/* Fußzeile-Label links */}
             <div className="h-12 mt-2 bg-[#f0ede6] border border-zinc-300 rounded flex items-center justify-center text-[10px] font-bold text-zinc-700 uppercase">
               Gesamt
             </div>
@@ -432,7 +487,6 @@ export default function Home() {
               const dayAppointments = appointments.filter((apt) => apt.date === dateStr);
               const isToday = formatDateString(new Date()) === dateStr;
 
-              // Gesamte Arbeitszeit für diesen Tag in Minuten berechnen
               const totalDayMinutes = dayAppointments.reduce((sum, apt) => {
                 const sMin = timeToMinutes(apt.start_time);
                 const eMin = timeToMinutes(apt.end_time);
@@ -493,9 +547,14 @@ export default function Home() {
                               <span className={`font-bold text-[10px] px-1.5 py-0.5 rounded ${design.timeTextBg}`}>
                                 {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
                               </span>
-                              <button onClick={() => handleDelete(apt.id)} className="text-current opacity-70 hover:opacity-100 p-0.5" title="Löschen">
-                                <Trash2 size={13} />
-                              </button>
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => openEditModal(apt)} className="text-current opacity-70 hover:opacity-100 p-0.5" title="Bearbeiten">
+                                  <Pencil size={13} />
+                                </button>
+                                <button onClick={() => handleDelete(apt.id)} className="text-current opacity-70 hover:opacity-100 p-0.5" title="Löschen">
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
                             </div>
                             <p className="font-black text-sm truncate tracking-tight">{apt.students?.name}</p>
                             
@@ -531,7 +590,7 @@ export default function Home() {
                     })}
                   </div>
 
-                  {/* Fußzeile pro Tag: Arbeitszeit in Minuten */}
+                  {/* Fußzeile pro Tag */}
                   <div className="h-12 mt-2 bg-[#f0ede6] border border-zinc-300 rounded flex flex-col items-center justify-center text-center">
                     <span className="text-[10px] font-bold text-zinc-500 uppercase leading-none">Arbeitszeit</span>
                     <span className="text-xs font-black text-zinc-900 mt-0.5">
@@ -545,6 +604,139 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* BEARBEITEN MODAL (POPUP) */}
+      {editingApt && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white max-w-md w-full p-6 rounded-xl shadow-2xl border border-zinc-300 relative animate-in fade-in zoom-in-95 duration-150">
+            <button 
+              onClick={() => setEditingApt(null)} 
+              className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-700 p-1"
+            >
+              <X size={20} />
+            </button>
+
+            <h2 className="text-lg font-bold mb-6 text-zinc-800 flex items-center gap-2">
+              <Pencil className="text-yellow-600" size={20} />
+              TERMIN BEARBEITEN
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-zinc-500 mb-1 uppercase tracking-wide">Schüler</label>
+                <select 
+                  className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2.5 px-3 text-zinc-800 text-sm focus:outline-none focus:border-yellow-600"
+                  value={editStudentId}
+                  onChange={(e) => setEditStudentId(e.target.value)}
+                >
+                  {students.map((student) => (
+                    <option key={student.id} value={student.id}>{student.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-500 mb-1 uppercase tracking-wide">Fahrzeug</label>
+                <select 
+                  className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2.5 px-3 text-zinc-800 text-sm focus:outline-none focus:border-yellow-600"
+                  value={editCar}
+                  onChange={(e) => setEditCar(e.target.value)}
+                >
+                  <option value="Automatik">Automatik</option>
+                  <option value="Schalter">Schalter</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-500 mb-1 uppercase tracking-wide">Art der Fahrt</label>
+                <select 
+                  className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2.5 px-3 text-zinc-800 text-sm focus:outline-none focus:border-yellow-600"
+                  value={editDriveType}
+                  onChange={(e) => setEditDriveType(e.target.value)}
+                >
+                  <option value="Übungsfahrt">Übungsfahrt (Standard)</option>
+                  <option value="Überlandfahrt">Überlandfahrt (Sonderfahrt)</option>
+                  <option value="Autobahnfahrt">Autobahnfahrt (Sonderfahrt)</option>
+                  <option value="Nachtfahrt">Nachtfahrt (Sonderfahrt)</option>
+                  <option value="Prüfung">Praktische Prüfung</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-500 mb-1 uppercase tracking-wide">Startpunkt / Abholort</label>
+                <div className="relative flex items-center bg-[#f4f2ec] border border-zinc-300 rounded-lg px-3 py-2">
+                  <div className="w-8 h-6 flex items-center justify-center mr-2 shrink-0 bg-white rounded border border-zinc-200 overflow-hidden">
+                    <img 
+                      src={editPickupLocation === "Bahnhof (Netto)" ? "/netto.png" : editPickupLocation === "Bahnhof (Rewe)" ? "/rewe.png" : "/logo.png"} 
+                      alt="Symbol" 
+                      className="max-h-5 max-w-7 object-contain"
+                    />
+                  </div>
+                  <select 
+                    className="w-full bg-transparent text-zinc-800 appearance-none focus:outline-none font-medium text-sm cursor-pointer"
+                    value={editPickupLocation}
+                    onChange={(e) => setEditPickupLocation(e.target.value)}
+                  >
+                    <option value="Fahrschule">Fahrschule</option>
+                    <option value="Bahnhof (Netto)">Bahnhof (Netto)</option>
+                    <option value="Bahnhof (Rewe)">Bahnhof (Rewe)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-500 mb-1 uppercase tracking-wide">Datum</label>
+                <input 
+                  type="date" 
+                  className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2.5 px-3 text-zinc-800 text-sm focus:outline-none focus:border-yellow-600"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 mb-1 uppercase tracking-wide">Von</label>
+                  <div className="grid grid-cols-2 gap-1">
+                    <select className="bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-1 text-zinc-800 text-xs" value={editStartHour} onChange={(e) => setEditStartHour(e.target.value)}>
+                      {hours.map((h) => <option key={h} value={h}>{h}</option>)}
+                    </select>
+                    <select className="bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-1 text-zinc-800 text-xs text-center" value={editStartMinute} onChange={(e) => setEditStartMinute(e.target.value)}>
+                      {minutes.map((m) => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 mb-1 uppercase tracking-wide">Bis</label>
+                  <div className="grid grid-cols-2 gap-1">
+                    <select className="bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-1 text-zinc-800 text-xs" value={editEndHour} onChange={(e) => setEditEndHour(e.target.value)}>
+                      {hours.map((h) => <option key={h} value={h}>{h}</option>)}
+                    </select>
+                    <select className="bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-1 text-zinc-800 text-xs text-center" value={editEndMinute} onChange={(e) => setEditEndMinute(e.target.value)}>
+                      {minutes.map((m) => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-6">
+                <button 
+                  onClick={() => setEditingApt(null)} 
+                  className="flex-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 font-bold py-2.5 rounded-lg text-sm transition-colors"
+                >
+                  Abbrechen
+                </button>
+                <button 
+                  onClick={handleUpdate} 
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-2.5 rounded-lg text-sm transition-all shadow-md"
+                >
+                  Änderungen speichern
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
