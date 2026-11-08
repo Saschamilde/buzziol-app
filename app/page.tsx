@@ -515,7 +515,6 @@ export default function Home() {
             </label>
           </div>
 
-          {/* NEUE ADRESSTRUKTUR: Straße + Hausnummer, PLZ & Ort */}
           <input 
             type="text" placeholder="Straße + Hausnummer"
             className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-3 text-zinc-800 text-xs focus:outline-none focus:border-yellow-600"
@@ -551,21 +550,22 @@ export default function Home() {
               value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
             />
           </div>
+          {/* FRISTEN GEETAUSCHT: Zulassung zuerst, dann Theorie */}
           <div className="grid grid-cols-2 gap-2 bg-[#f7f5f0] p-2 rounded-lg border border-zinc-200">
-            <div>
-              <label className="block text-[10px] font-bold text-zinc-500 uppercase">Theorie-Prüfung bis</label>
-              <input 
-                type="date" 
-                className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
-                value={newTheoryExpiry} onChange={(e) => setNewTheoryExpiry(e.target.value)}
-              />
-            </div>
             <div>
               <label className="block text-[10px] font-bold text-zinc-500 uppercase">Zulassung bis</label>
               <input 
                 type="date" 
                 className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
                 value={newLicenseExpiry} onChange={(e) => setNewLicenseExpiry(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-zinc-500 uppercase">Theorie-Prüfung bis</label>
+              <input 
+                type="date" 
+                className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
+                value={newTheoryExpiry} onChange={(e) => setNewTheoryExpiry(e.target.value)}
               />
             </div>
           </div>
@@ -845,14 +845,15 @@ export default function Home() {
                 <p className="font-semibold text-zinc-800 flex items-center gap-1"><Building2 size={13}/> {viewingStudent.school_or_workplace || "Nicht angegeben"}</p>
               </div>
 
+              {/* FRISTEN GEETAUSCHT IN DER ANSICHT */}
               <div className="grid grid-cols-2 gap-3 border-t border-zinc-200 pt-3">
-                <div>
-                  <span className="block text-[10px] font-bold text-red-600 uppercase">Theorie-Prüfung Ablauf</span>
-                  <p className="font-bold text-zinc-900">{viewingStudent.theory_exam_expiry || "Kein Datum"}</p>
-                </div>
                 <div>
                   <span className="block text-[10px] font-bold text-red-600 uppercase">Zulassung Frist</span>
                   <p className="font-bold text-zinc-900">{viewingStudent.license_application_expiry || "Kein Datum"}</p>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-red-600 uppercase">Theorie-Prüfung Ablauf</span>
+                  <p className="font-bold text-zinc-900">{viewingStudent.theory_exam_expiry || "Kein Datum"}</p>
                 </div>
               </div>
 
@@ -927,7 +928,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* BEARBEITEN - NEUE ADRESSTRUKTUR */}
               <div>
                 <label className="block text-[10px] font-bold text-zinc-500 uppercase">Straße + Hausnummer</label>
                 <input 
@@ -989,16 +989,8 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* FRISTEN GEETAUSCHT IM BEARBEITEN-MODAL */}
               <div className="grid grid-cols-2 gap-2 bg-[#f7f5f0] p-2 rounded border border-zinc-200">
-                <div>
-                  <label className="block text-[10px] font-bold text-red-600 uppercase">Theorie bis</label>
-                  <input 
-                    type="date" 
-                    className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
-                    value={editStudentProfile.theory_exam_expiry || ""} 
-                    onChange={(e) => setEditStudentProfile({...editStudentProfile, theory_exam_expiry: e.target.value})}
-                  />
-                </div>
                 <div>
                   <label className="block text-[10px] font-bold text-red-600 uppercase">Zulassung bis</label>
                   <input 
@@ -1006,6 +998,15 @@ export default function Home() {
                     className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
                     value={editStudentProfile.license_application_expiry || ""} 
                     onChange={(e) => setEditStudentProfile({...editStudentProfile, license_application_expiry: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-red-600 uppercase">Theorie bis</label>
+                  <input 
+                    type="date" 
+                    className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
+                    value={editStudentProfile.theory_exam_expiry || ""} 
+                    onChange={(e) => setEditStudentProfile({...editStudentProfile, theory_exam_expiry: e.target.value})}
                   />
                 </div>
               </div>
