@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { User, Clock, CalendarDays, Calendar as CalendarIcon, ListTodo, Car, UserPlus, Trash2, KeyRound, ChevronLeft, ChevronRight, MapPin, Pencil, X } from "lucide-react";
+import { User, Clock, CalendarDays, Calendar as CalendarIcon, ListTodo, Car, UserPlus, Trash2, KeyRound, ChevronLeft, ChevronRight, MapPin, Pencil, X, Eye, Phone, Mail, MapPinned, Building2, Calendar, FileText } from "lucide-react";
 
 // 1. Supabase Verbindung
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -13,8 +13,17 @@ export default function Home() {
   const [students, setStudents] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
   
-  // Zustände für Schüler anlegen
+  // Zustände für neuen Schüler anlegen
   const [newStudentName, setNewStudentName] = useState("");
+  const [newAddress, setNewAddress] = useState("");
+  const [newSchoolWork, setNewSchoolWork] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newBirthDate, setNewBirthDate] = useState("");
+  const [newHasGlasses, setNewHasGlasses] = useState(false);
+  const [newTheoryExpiry, setNewTheoryExpiry] = useState("");
+  const [newLicenseExpiry, setNewLicenseExpiry] = useState("");
+  const [newNotes, setNewNotes] = useState("");
   const [studentStatus, setStudentStatus] = useState("");
 
   // Zustände für Termin-Formular
@@ -29,7 +38,7 @@ export default function Home() {
   const [pickupLocation, setPickupLocation] = useState("Fahrschule");
   const [status, setStatus] = useState("");
 
-  // Zustände für das Bearbeiten-Modal
+  // Zustände für das Termin-Bearbeiten-Modal
   const [editingApt, setEditingApt] = useState<any>(null);
   const [editStudentId, setEditStudentId] = useState("");
   const [editDate, setEditDate] = useState("");
@@ -41,6 +50,10 @@ export default function Home() {
   const [editCar, setEditCar] = useState("Automatik");
   const [editPickupLocation, setEditPickupLocation] = useState("Fahrschule");
 
+  // Zustand für das Schüler-Profil-Modal
+  const [viewingStudent, setViewingStudent] = useState<any>(null);
+  const [editStudentProfile, setEditStudentProfile] = useState<any>(null);
+
   // Zustand für die angezeigte Woche
   const [weekOffset, setWeekOffset] = useState(0);
   const [mounted, setMounted] = useState(false);
@@ -50,7 +63,7 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // Erstelle alle 15-Minuten-Slots von 07:00 bis 00:00 Uhr
+  // 15-Minuten-Slots von 07:00 bis 00:00 Uhr
   const timeSlots: { time: string; isFullHour: boolean }[] = [];
   for (let hour = 7; hour <= 23; hour++) {
     const hStr = String(hour).padStart(2, "0");
@@ -78,33 +91,78 @@ export default function Home() {
     if (aptData) setAppointments(aptData);
   };
 
-  // 3. Schüler anlegen
+  // 3. Schüler anlegen mit Profil-Daten
   const handleAddStudent = async () => {
     if (!newStudentName.trim()) {
       setStudentStatus("Bitte einen Namen eingeben!");
       return;
     }
     setStudentStatus("Wird gespeichert...");
-    const { error } = await supabase.from("students").insert([{ name: newStudentName.trim() }]);
+    const { error } = await supabase.from("students").insert([{ 
+      name: newStudentName.trim(),
+      address: newAddress.trim() || null,
+      school_or_workplace: newSchoolWork.trim() || null,
+      phone: newPhone.trim() || null,
+      email: newEmail.trim() || null,
+      birth_date: newBirthDate || null,
+      has_glasses: newHasGlasses,
+      theory_exam_expiry: newTheoryExpiry || null,
+      license_application_expiry: newLicenseExpiry || null,
+      notes: newNotes.trim() || null
+    }]);
 
     if (error) {
       setStudentStatus("Fehler: " + error.message);
     } else {
       setStudentStatus("Schüler hinzugefügt! ✅");
       setNewStudentName("");
+      setNewAddress("");
+      setNewSchoolWork("");
+      setNewPhone("");
+      setNewEmail("");
+      setNewBirthDate("");
+      setNewHasGlasses(false);
+      setNewTheoryExpiry("");
+      setNewLicenseExpiry("");
+      setNewNotes("");
       fetchData();
       setTimeout(() => setStudentStatus(""), 3000);
     }
   };
 
-  // 4. Schüler löschen
+  // 4. Schüler Profil aktualisieren
+  const handleUpdateStudentProfile = async () => {
+    if (!editStudentProfile) return;
+
+    const { error } = await supabase
+      .from("students")
+      .update({
+        name: editStudentProfile.name,
+        address: editStudentProfile.address,
+        school_or_workplace: editStudentProfile.school_or_workplace,
+        phone: editStudentProfile.phone,
+        email: editStudentProfile.email,
+        birth_date: editStudentProfile.birth_date,
+        has_glasses: editStudentProfile.has_glasses,
+        theory_exam_expiry: editStudentProfile.theory_exam_expiry,
+        license_application_expiry: editStudentProfile.license_application_expiry,
+        notes: editStudentProfile.notes,
+      })
+      .eq("id", editStudentProfile.id);
+
+    if (error) {
+      alert("Fehler beim Speichern des Profils: " + error.message);
+    } else {
+      setEditStudentProfile(null);
+      fetchData();
+    }
+  };
+
+  // 5. Schüler löschen
   const handleDeleteStudent = async (studentId: string, studentName: string) => {
     if (!window.confirm(`Schüler "${studentName}" wirklich löschen? (Dabei werden auch alle zugehörigen Termine entfernt)`)) return;
 
-    // Erst die Termine des Schülers löschen, um Foreign-Key-Konflikte zu vermeiden
     await supabase.from("availabilities").delete().eq("student_id", studentId);
-
-    // Dann den Schüler löschen
     const { error } = await supabase.from("students").delete().eq("id", studentId);
     
     if (error) {
@@ -114,7 +172,7 @@ export default function Home() {
     }
   };
 
-  // 5. Termin speichern
+  // 6. Termin speichern
   const handleSave = async () => {
     if (!selectedStudent || !date) {
       setStatus("Bitte Schüler und Datum ausfüllen!");
@@ -149,7 +207,7 @@ export default function Home() {
     }
   };
 
-  // 6. Termin löschen
+  // 7. Termin löschen
   const handleDelete = async (id: string) => {
     if (!window.confirm("Diesen Termin wirklich löschen?")) return;
 
@@ -162,7 +220,7 @@ export default function Home() {
     }
   };
 
-  // 7. Bearbeiten Modal öffnen
+  // 8. Termin Bearbeiten Modal öffnen
   const openEditModal = (apt: any) => {
     setEditingApt(apt);
     setEditStudentId(apt.student_id);
@@ -178,7 +236,7 @@ export default function Home() {
     setEditPickupLocation(apt.pickup_location || "Fahrschule");
   };
 
-  // 8. Termin aktualisieren
+  // 9. Termin aktualisieren
   const handleUpdate = async () => {
     if (!editingApt) return;
 
@@ -420,43 +478,117 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Schüler anlegen & verwalten */}
+      {/* ERWEITERTE SCHÜLER-VERWALTUNG & PROFIL */}
       <div className="max-w-md mx-auto bg-white p-6 rounded-xl shadow-xl border border-zinc-200 mb-8">
         <h2 className="text-sm font-bold mb-4 text-zinc-800 flex items-center gap-2">
           <UserPlus className="text-zinc-500" size={18} />
-          SCHÜLER VERWALTEN
+          NEUEN SCHÜLER ANLEGEN & PROFIL
         </h2>
-        <div className="flex gap-2 mb-4">
+
+        <div className="space-y-3 mb-4">
           <input 
-            type="text" placeholder="Name des Schülers..."
-            className="flex-1 bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-3 text-zinc-800 focus:outline-none focus:border-yellow-600 text-sm"
+            type="text" placeholder="Name des Schülers *"
+            className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2.5 px-3 text-zinc-800 text-sm focus:outline-none focus:border-yellow-600 font-bold"
             value={newStudentName} onChange={(e) => setNewStudentName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddStudent()}
           />
-          <button onClick={handleAddStudent} className="bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm">
-            HINZUFÜGEN
+          <div className="grid grid-cols-2 gap-2">
+            <input 
+              type="date" placeholder="Geburtsdatum"
+              className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-3 text-zinc-800 text-xs focus:outline-none focus:border-yellow-600"
+              value={newBirthDate} onChange={(e) => setNewBirthDate(e.target.value)}
+            />
+            <label className="flex items-center gap-2 bg-[#f4f2ec] border border-zinc-300 rounded-lg px-3 py-2 cursor-pointer">
+              <input 
+                type="checkbox" 
+                className="w-4 h-4 text-yellow-600 rounded focus:ring-yellow-500"
+                checked={newHasGlasses} onChange={(e) => setNewHasGlasses(e.target.checked)}
+              />
+              <span className="text-xs font-bold text-zinc-700 flex items-center gap-1"><Eye size={14}/> Sehhilfe</span>
+            </label>
+          </div>
+          <input 
+            type="text" placeholder="Adresse (Straße, Hausnr., Ort)"
+            className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-3 text-zinc-800 text-xs focus:outline-none focus:border-yellow-600"
+            value={newAddress} onChange={(e) => setNewAddress(e.target.value)}
+          />
+          <input 
+            type="text" placeholder="Arbeitsort / Schule"
+            className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-3 text-zinc-800 text-xs focus:outline-none focus:border-yellow-600"
+            value={newSchoolWork} onChange={(e) => setNewSchoolWork(e.target.value)}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <input 
+              type="text" placeholder="Telefonnummer"
+              className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-3 text-zinc-800 text-xs focus:outline-none focus:border-yellow-600"
+              value={newPhone} onChange={(e) => setNewPhone(e.target.value)}
+            />
+            <input 
+              type="email" placeholder="E-Mail-Adresse"
+              className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-3 text-zinc-800 text-xs focus:outline-none focus:border-yellow-600"
+              value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2 bg-[#f7f5f0] p-2 rounded-lg border border-zinc-200">
+            <div>
+              <label className="block text-[10px] font-bold text-zinc-500 uppercase">Theorie-Prüfung bis</label>
+              <input 
+                type="date" 
+                className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
+                value={newTheoryExpiry} onChange={(e) => setNewTheoryExpiry(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-zinc-500 uppercase">Zulassung bis</label>
+              <input 
+                type="date" 
+                className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
+                value={newLicenseExpiry} onChange={(e) => setNewLicenseExpiry(e.target.value)}
+              />
+            </div>
+          </div>
+          <textarea 
+            placeholder="Persönliche Notizen..."
+            className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-3 text-zinc-800 text-xs focus:outline-none focus:border-yellow-600 resize-none h-16"
+            value={newNotes} onChange={(e) => setNewNotes(e.target.value)}
+          />
+
+          <button onClick={handleAddStudent} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors text-sm">
+            SCHÜLER ANLEGEN
           </button>
         </div>
+
         {studentStatus && (
-          <p className={`text-xs font-semibold mb-3 ${studentStatus.includes('Fehler') || studentStatus.includes('Bitte') ? 'text-red-600' : 'text-green-600'}`}>
+          <p className={`text-xs font-semibold mb-3 text-center ${studentStatus.includes('Fehler') || studentStatus.includes('Bitte') ? 'text-red-600' : 'text-green-600'}`}>
             {studentStatus}
           </p>
         )}
 
-        {/* Liste aller vorhandenen Schüler mit Lösch-Button */}
+        {/* Liste aller Schüler mit Profil- und Lösch-Button */}
         {students.length > 0 && (
-          <div className="border-t border-zinc-200 pt-3 max-h-40 overflow-y-auto space-y-2">
+          <div className="border-t border-zinc-200 pt-3 max-h-52 overflow-y-auto space-y-2">
             <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-wide mb-1">Vorhandene Schüler ({students.length})</p>
             {students.map((student) => (
-              <div key={student.id} className="flex justify-between items-center bg-[#f7f5f0] px-3 py-1.5 rounded-lg border border-zinc-200 text-sm">
-                <span className="font-semibold text-zinc-800">{student.name}</span>
-                <button 
-                  onClick={() => handleDeleteStudent(student.id, student.name)}
-                  className="text-red-500 hover:text-red-700 p-1 transition-colors"
-                  title="Schüler löschen"
-                >
-                  <Trash2 size={15} />
-                </button>
+              <div key={student.id} className="flex justify-between items-center bg-[#f7f5f0] px-3 py-2 rounded-lg border border-zinc-200 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-zinc-800">{student.name}</span>
+                  {student.has_glasses && <span className="bg-blue-100 text-blue-800 text-[10px] px-1.5 py-0.5 rounded font-bold" title="Sehhilfe erforderlich">👓 Brille</span>}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => setViewingStudent(student)}
+                    className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-900 px-2 py-1 rounded text-xs font-bold transition-colors flex items-center gap-1"
+                    title="Profil anzeigen"
+                  >
+                    <User size={13} /> Profil
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteStudent(student.id, student.name)}
+                    className="text-red-500 hover:text-red-700 p-1 transition-colors"
+                    title="Schüler löschen"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -593,7 +725,6 @@ export default function Home() {
                             </div>
                             <p className="font-black text-sm truncate tracking-tight">{apt.students?.name}</p>
                             
-                            {/* Logos auf der Terminkarte */}
                             {apt.pickup_location === "Fahrschule" ? (
                               <div className="inline-flex items-center bg-white/90 px-2 py-0.5 rounded mt-1 shadow-sm">
                                 <img src="/logo.png" alt="Fahrschule Logo" className="h-4 object-contain" />
@@ -640,14 +771,229 @@ export default function Home() {
         </div>
       </div>
 
-      {/* BEARBEITEN MODAL (POPUP) */}
+      {/* SCHÜLER PROFIL MODAL (ANSICHT) */}
+      {viewingStudent && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white max-w-lg w-full p-6 rounded-xl shadow-2xl border border-zinc-300 relative">
+            <button onClick={() => setViewingStudent(null)} className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-700 p-1">
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-yellow-500/20 text-yellow-800 rounded-full flex items-center justify-center font-black text-xl">
+                {viewingStudent.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-zinc-900">{viewingStudent.name}</h2>
+                {viewingStudent.has_glasses && <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-bold">👓 Sehhilfe erforderlich</span>}
+              </div>
+            </div>
+
+            <div className="space-y-4 text-sm bg-[#f7f5f0] p-4 rounded-xl border border-zinc-200">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="block text-[10px] font-bold text-zinc-400 uppercase">Geburtsdatum</span>
+                  <p className="font-semibold text-zinc-800">{viewingStudent.birth_date || "Nicht angegeben"}</p>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-zinc-400 uppercase">Telefon</span>
+                  <p className="font-semibold text-zinc-800 flex items-center gap-1"><Phone size={13}/> {viewingStudent.phone || "Nicht angegeben"}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="block text-[10px] font-bold text-zinc-400 uppercase">E-Mail</span>
+                  <p className="font-semibold text-zinc-800 flex items-center gap-1"><Mail size={13}/> {viewingStudent.email || "Nicht angegeben"}</p>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-zinc-400 uppercase">Adresse</span>
+                  <p className="font-semibold text-zinc-800 flex items-center gap-1"><MapPinned size={13}/> {viewingStudent.address || "Nicht angegeben"}</p>
+                </div>
+              </div>
+
+              <div>
+                <span className="block text-[10px] font-bold text-zinc-400 uppercase">Arbeitsort / Schule</span>
+                <p className="font-semibold text-zinc-800 flex items-center gap-1"><Building2 size={13}/> {viewingStudent.school_or_workplace || "Nicht angegeben"}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 border-t border-zinc-200 pt-3">
+                <div>
+                  <span className="block text-[10px] font-bold text-red-600 uppercase">Theorie-Prüfung Ablauf</span>
+                  <p className="font-bold text-zinc-900">{viewingStudent.theory_exam_expiry || "Kein Datum"}</p>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-red-600 uppercase">Zulassung Frist</span>
+                  <p className="font-bold text-zinc-900">{viewingStudent.license_application_expiry || "Kein Datum"}</p>
+                </div>
+              </div>
+
+              {viewingStudent.notes && (
+                <div className="border-t border-zinc-200 pt-3">
+                  <span className="block text-[10px] font-bold text-zinc-400 uppercase">Notizen</span>
+                  <p className="text-zinc-700 text-xs mt-1 whitespace-pre-wrap">{viewingStudent.notes}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button 
+                onClick={() => {
+                  const s = viewingStudent;
+                  setViewingStudent(null);
+                  setEditStudentProfile(s);
+                }} 
+                className="w-full bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-2.5 rounded-lg text-sm transition-all shadow-md"
+              >
+                Profil bearbeiten
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SCHÜLER PROFIL BEARBEITEN MODAL */}
+      {editStudentProfile && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white max-w-md w-full p-6 rounded-xl shadow-2xl border border-zinc-300 relative">
+            <button onClick={() => setEditStudentProfile(null)} className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-700 p-1">
+              <X size={20} />
+            </button>
+
+            <h2 className="text-lg font-bold mb-4 text-zinc-800 flex items-center gap-2">
+              <Pencil className="text-yellow-600" size={18} />
+              SCHÜLERPROFIL BEARBEITEN
+            </h2>
+
+            <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase">Name</label>
+                <input 
+                  type="text" 
+                  className="w-full bg-[#f4f2ec] border border-zinc-300 rounded py-2 px-3 text-zinc-800 text-sm font-bold"
+                  value={editStudentProfile.name || ""} 
+                  onChange={(e) => setEditStudentProfile({...editStudentProfile, name: e.target.value})}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase">Geburtsdatum</label>
+                  <input 
+                    type="date" 
+                    className="w-full bg-[#f4f2ec] border border-zinc-300 rounded py-2 px-2 text-zinc-800 text-xs"
+                    value={editStudentProfile.birth_date || ""} 
+                    onChange={(e) => setEditStudentProfile({...editStudentProfile, birth_date: e.target.value})}
+                  />
+                </div>
+                <div className="flex items-center pt-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 text-yellow-600 rounded"
+                      checked={editStudentProfile.has_glasses || false} 
+                      onChange={(e) => setEditStudentProfile({...editStudentProfile, has_glasses: e.target.checked})}
+                    />
+                    <span className="text-xs font-bold text-zinc-700">Sehhilfe</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase">Adresse</label>
+                <input 
+                  type="text" 
+                  className="w-full bg-[#f4f2ec] border border-zinc-300 rounded py-2 px-3 text-zinc-800 text-xs"
+                  value={editStudentProfile.address || ""} 
+                  onChange={(e) => setEditStudentProfile({...editStudentProfile, address: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase">Arbeitsort / Schule</label>
+                <input 
+                  type="text" 
+                  className="w-full bg-[#f4f2ec] border border-zinc-300 rounded py-2 px-3 text-zinc-800 text-xs"
+                  value={editStudentProfile.school_or_workplace || ""} 
+                  onChange={(e) => setEditStudentProfile({...editStudentProfile, school_or_workplace: e.target.value})}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase">Telefon</label>
+                  <input 
+                    type="text" 
+                    className="w-full bg-[#f4f2ec] border border-zinc-300 rounded py-2 px-2 text-zinc-800 text-xs"
+                    value={editStudentProfile.phone || ""} 
+                    onChange={(e) => setEditStudentProfile({...editStudentProfile, phone: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase">E-Mail</label>
+                  <input 
+                    type="email" 
+                    className="w-full bg-[#f4f2ec] border border-zinc-300 rounded py-2 px-2 text-zinc-800 text-xs"
+                    value={editStudentProfile.email || ""} 
+                    onChange={(e) => setEditStudentProfile({...editStudentProfile, email: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 bg-[#f7f5f0] p-2 rounded border border-zinc-200">
+                <div>
+                  <label className="block text-[10px] font-bold text-red-600 uppercase">Theorie bis</label>
+                  <input 
+                    type="date" 
+                    className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
+                    value={editStudentProfile.theory_exam_expiry || ""} 
+                    onChange={(e) => setEditStudentProfile({...editStudentProfile, theory_exam_expiry: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-red-600 uppercase">Zulassung bis</label>
+                  <input 
+                    type="date" 
+                    className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
+                    value={editStudentProfile.license_application_expiry || ""} 
+                    onChange={(e) => setEditStudentProfile({...editStudentProfile, license_application_expiry: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase">Notizen</label>
+                <textarea 
+                  className="w-full bg-[#f4f2ec] border border-zinc-300 rounded py-2 px-3 text-zinc-800 text-xs resize-none h-16"
+                  value={editStudentProfile.notes || ""} 
+                  onChange={(e) => setEditStudentProfile({...editStudentProfile, notes: e.target.value})}
+                />
+              </div>
+
+              <div className="flex gap-2 pt-3">
+                <button 
+                  onClick={() => setEditStudentProfile(null)} 
+                  className="flex-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 font-bold py-2 rounded-lg text-sm"
+                >
+                  Abbrechen
+                </button>
+                <button 
+                  onClick={handleUpdateStudentProfile} 
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-2 rounded-lg text-sm shadow-md"
+                >
+                  Speichern
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TERMIN BEARBEITEN MODAL */}
       {editingApt && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white max-w-md w-full p-6 rounded-xl shadow-2xl border border-zinc-300 relative animate-in fade-in zoom-in-95 duration-150">
-            <button 
-              onClick={() => setEditingApt(null)} 
-              className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-700 p-1"
-            >
+          <div className="bg-white max-w-md w-full p-6 rounded-xl shadow-2xl border border-zinc-300 relative">
+            <button onClick={() => setEditingApt(null)} className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-700 p-1">
               <X size={20} />
             </button>
 
@@ -755,16 +1101,10 @@ export default function Home() {
               </div>
 
               <div className="flex gap-2 mt-6">
-                <button 
-                  onClick={() => setEditingApt(null)} 
-                  className="flex-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 font-bold py-2.5 rounded-lg text-sm transition-colors"
-                >
+                <button onClick={() => setEditingApt(null)} className="flex-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 font-bold py-2.5 rounded-lg text-sm">
                   Abbrechen
                 </button>
-                <button 
-                  onClick={handleUpdate} 
-                  className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-2.5 rounded-lg text-sm transition-all shadow-md"
-                >
+                <button onClick={handleUpdate} className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-2.5 rounded-lg text-sm shadow-md">
                   Änderungen speichern
                 </button>
               </div>
