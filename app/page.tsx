@@ -179,42 +179,48 @@ export default function Home() {
     return parseInt(parts[0]) * 60 + parseInt(parts[1]);
   };
 
-  // Fahrzeug-Farben (Cupra-Grau & Weiß)
-  const getCarColorStyles = (carName: string) => {
-    switch (carName) {
-      case "Schalter": // Clean Weiß / Helles Grau mit dunkler Schrift für perfekte Lesbarkeit
-        return {
-          bg: "bg-[#e5e7eb]",
-          border: "border-white",
-          text: "text-gray-900",
-          badge: "bg-gray-200 text-gray-800",
-          timeBg: "bg-gray-300 text-gray-900"
-        };
-      case "Automatik": // Cupra-Grau (Edles Tech-Anthrazit mit Kupfer/Gelb-Akzenten passend zum Branding)
-        return {
-          bg: "bg-[#27272a]",
-          border: "border-zinc-500",
-          text: "text-white",
-          badge: "bg-zinc-700 text-zinc-200",
-          timeBg: "bg-black/50 text-yellow-400"
-        };
-      case "Motorrad": // Kräftiges Rot
-        return {
-          bg: "bg-[#321a1a]",
-          border: "border-red-500",
-          text: "text-white",
-          badge: "bg-red-500/20 text-red-300",
-          timeBg: "bg-black/60 text-red-400"
-        };
-      default:
-        return {
-          bg: "bg-[#2a2a2a]",
-          border: "border-gray-500",
-          text: "text-white",
-          badge: "bg-gray-500/20 text-gray-300",
-          timeBg: "bg-black/60 text-gray-300"
-        };
+  // Styling je nach Auto und Fahrtart (mit Autobahn-Blau, Überland-Grün, Nachtfahrt-Gelb)
+  const getCardStyles = (carName: string, driveType: string) => {
+    let baseStyle = {
+      bg: "bg-[#27272a]",
+      border: "border-zinc-500",
+      text: "text-white",
+      timeBg: "bg-black/50 text-yellow-400"
+    };
+
+    if (carName === "Schalter") {
+      baseStyle = {
+        bg: "bg-[#e5e7eb]",
+        border: "border-white",
+        text: "text-gray-900",
+        timeBg: "bg-gray-300 text-gray-900"
+      };
+    } else if (carName === "Motorrad") {
+      baseStyle = {
+        bg: "bg-[#321a1a]",
+        border: "border-red-500",
+        text: "text-white",
+        timeBg: "bg-black/60 text-red-400"
+      };
     }
+
+    // Fahrtenart-Badges mit deinen Wunschfarben
+    let badgeStyle = "bg-black/40 text-gray-300";
+    if (carName === "Schalter") {
+      badgeStyle = "bg-gray-300 text-gray-800";
+    }
+
+    if (driveType === "Prüfung") {
+      badgeStyle = "bg-red-600 text-white font-black animate-pulse";
+    } else if (driveType === "Autobahnfahrt") {
+      badgeStyle = "bg-blue-600 text-white font-bold"; // Autobahn-Blau
+    } else if (driveType === "Überlandfahrt") {
+      badgeStyle = "bg-green-600 text-white font-bold"; // Überland-Grün (Natur)
+    } else if (driveType === "Nachtfahrt") {
+      badgeStyle = "bg-yellow-400 text-black font-bold"; // Nachtfahrt-Gelb
+    }
+
+    return { ...baseStyle, badgeStyle };
   };
 
   return (
@@ -362,7 +368,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* KALENDER MIT CUPRA-GRAU UND WEISS */}
+      {/* KALENDER MIT SCHILDER-FARBEN */}
       <div className="max-w-7xl mx-auto bg-[#1a1a1a] p-4 sm:p-6 rounded-xl shadow-2xl border border-gray-800 overflow-x-auto">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <div className="flex items-center gap-3">
@@ -455,13 +461,12 @@ export default function Home() {
                       const topPx = slotIndex * 34;
                       const heightPx = slotSpan * 34 - 2;
 
-                      // Hole die passenden Farben (Schalter = Weiß, Automatik = Cupra-Grau)
-                      const colors = getCarColorStyles(apt.car);
+                      const style = getCardStyles(apt.car, apt.drive_type);
 
                       return (
                         <div 
                           key={apt.id} 
-                          className={`absolute left-1 right-1 border-2 p-1.5 rounded shadow-xl z-20 overflow-hidden flex flex-col justify-between ${colors.bg} ${colors.border}`}
+                          className={`absolute left-1 right-1 border-2 p-1.5 rounded shadow-xl z-20 overflow-hidden flex flex-col justify-between ${style.bg} ${style.border}`}
                           style={{ 
                             top: `${topPx}px`, 
                             height: `${heightPx}px` 
@@ -469,19 +474,19 @@ export default function Home() {
                         >
                           <div>
                             <div className="flex justify-between items-center mb-0.5">
-                              <span className={`font-bold text-[10px] px-1 rounded ${colors.timeBg}`}>
+                              <span className={`font-bold text-[10px] px-1 rounded ${style.timeBg}`}>
                                 {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
                               </span>
                               <button onClick={() => handleDelete(apt.id)} className="text-gray-500 hover:text-red-600 p-0.5" title="Löschen">
                                 <Trash2 size={11} />
                               </button>
                             </div>
-                            <p className={`font-extrabold truncate text-xs ${colors.text}`}>{apt.students?.name}</p>
+                            <p className={`font-extrabold truncate text-xs ${style.text}`}>{apt.students?.name}</p>
                           </div>
                           
                           <div className="flex flex-wrap gap-1">
-                            <span className={`text-[8px] px-1 rounded font-medium ${colors.badge}`}>{apt.drive_type}</span>
-                            <span className={`text-[8px] px-1 rounded font-medium ${colors.badge}`}>🚗 {apt.car}</span>
+                            <span className={`text-[8px] px-1.5 py-0.5 rounded ${style.badgeStyle}`}>{apt.drive_type}</span>
+                            <span className="text-[8px] px-1 rounded font-medium bg-black/30 text-gray-300">🚗 {apt.car}</span>
                           </div>
                         </div>
                       );
