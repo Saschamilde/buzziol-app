@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { User, Clock, CalendarDays, Calendar, ListTodo, Car, UserPlus, Trash2 } from "lucide-react";
+import { User, Clock, CalendarDays, Calendar, ListTodo, Car, UserPlus, Trash2, KeyRound } from "lucide-react";
 
 // 1. Supabase Verbindung
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -25,6 +25,7 @@ export default function Home() {
   const [endHour, setEndHour] = useState("09");
   const [endMinute, setEndMinute] = useState("00");
   const [driveType, setDriveType] = useState("Übungsfahrt");
+  const [car, setCar] = useState("Automatik"); // Standardmäßig auf Automatik oder Schalter
   const [status, setStatus] = useState("");
 
   const hours = Array.from({ length: 16 }, (_, i) => String(i + 6).padStart(2, "0"));
@@ -84,7 +85,8 @@ export default function Home() {
         date: date,
         start_time: startTime, 
         end_time: endTime,
-        drive_type: driveType
+        drive_type: driveType,
+        car: car // Fahrzeug mitspeichern
       }
     ]);
 
@@ -125,7 +127,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#111111] text-white p-4 font-sans pb-20">
-      {/* Header mit echtem Logo */}
+      {/* Header */}
       <div className="max-w-md mx-auto mt-6 border-b-4 border-red-600 pb-4 mb-8 flex flex-col items-center">
         <img 
           src="/logo.png" 
@@ -156,6 +158,23 @@ export default function Home() {
                 {students.map((student) => (
                   <option key={student.id} value={student.id}>{student.name}</option>
                 ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Fahrzeug-Auswahl: Automatik / Schalter */}
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Fahrzeug</label>
+            <div className="relative">
+              <KeyRound className="absolute left-3 top-3 text-gray-500" size={18} />
+              <select 
+                className="w-full bg-[#222222] border border-gray-700 rounded-lg py-3 px-10 text-gray-200 appearance-none focus:outline-none focus:border-yellow-500"
+                value={car}
+                onChange={(e) => setCar(e.target.value)}
+              >
+                <option value="Automatik">Automatik</option>
+                <option value="Schalter">Schalter</option>
+                <option value="Motorrad">Motorrad</option>
               </select>
             </div>
           </div>
@@ -319,7 +338,9 @@ export default function Home() {
                       {apt.drive_type || 'Übungsfahrt'}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">{formatDate(apt.date)}</p>
+                  {/* Fahrzeug-Anzeige auf der Karte */}
+                  <p className="text-xs text-yellow-500/80 mt-1 font-medium">🚗 {apt.car || 'Automatik'}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{formatDate(apt.date)}</p>
                 </div>
                 
                 <div className="flex items-center gap-3">
