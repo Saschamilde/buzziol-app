@@ -276,11 +276,9 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Startpunkt / Abholort mit integrierten Logos im Dropdown */}
           <div>
             <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wide">Startpunkt / Abholort</label>
             <div className="relative flex items-center bg-[#f4f2ec] border border-zinc-300 rounded-lg px-3 py-2.5 focus-within:border-yellow-600">
-              {/* Vorschaubild im Dropdown je nach Auswahl */}
               <div className="w-8 h-6 flex items-center justify-center mr-2 shrink-0 bg-white rounded border border-zinc-200 overflow-hidden">
                 <img 
                   src={pickupLocation === "Bahnhof (Netto)" ? "/netto.png" : pickupLocation === "Bahnhof (Rewe)" ? "/rewe.png" : "/logo.png"} 
@@ -420,6 +418,11 @@ export default function Home() {
                 {slotObj.time}
               </div>
             ))}
+
+            {/* Fußzeile-Label links */}
+            <div className="h-12 mt-2 bg-[#f0ede6] border border-zinc-300 rounded flex items-center justify-center text-[10px] font-bold text-zinc-700 uppercase">
+              Gesamt
+            </div>
           </div>
 
           {/* 7 Wochentage Spalten */}
@@ -428,6 +431,13 @@ export default function Home() {
               const dateStr = formatDateString(day);
               const dayAppointments = appointments.filter((apt) => apt.date === dateStr);
               const isToday = formatDateString(new Date()) === dateStr;
+
+              // Gesamte Arbeitszeit für diesen Tag in Minuten berechnen
+              const totalDayMinutes = dayAppointments.reduce((sum, apt) => {
+                const sMin = timeToMinutes(apt.start_time);
+                const eMin = timeToMinutes(apt.end_time);
+                return sum + Math.max(0, eMin - sMin);
+              }, 0);
 
               return (
                 <div key={dIdx} className="flex flex-col">
@@ -519,6 +529,15 @@ export default function Home() {
                         </div>
                       );
                     })}
+                  </div>
+
+                  {/* Fußzeile pro Tag: Arbeitszeit in Minuten */}
+                  <div className="h-12 mt-2 bg-[#f0ede6] border border-zinc-300 rounded flex flex-col items-center justify-center text-center">
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase leading-none">Arbeitszeit</span>
+                    <span className="text-xs font-black text-zinc-900 mt-0.5">
+                      {totalDayMinutes} Min.
+                      {totalDayMinutes > 0 && ` (${(totalDayMinutes / 60).toFixed(1).replace('.', ',')} Std.)`}
+                    </span>
                   </div>
                 </div>
               );
