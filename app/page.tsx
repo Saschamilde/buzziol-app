@@ -30,6 +30,12 @@ export default function Home() {
 
   // Zustand für die angezeigte Woche (Offset zur aktuellen Woche)
   const [weekOffset, setWeekOffset] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    fetchData();
+  }, []);
 
   const hours = Array.from({ length: 16 }, (_, i) => String(i + 6).padStart(2, "0")); // 06:00 bis 21:00
   const minutes = ["00", "15", "30", "45"];
@@ -47,10 +53,6 @@ export default function Home() {
     
     if (aptData) setAppointments(aptData);
   };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   // 3. Schüler anlegen
   const handleAddStudent = async () => {
@@ -133,7 +135,6 @@ export default function Home() {
   // Wochentage für die aktuelle Wochenansicht berechnen (Mo-So)
   const getDaysForCurrentWeek = () => {
     const now = new Date();
-    // Auf Montag der aktuellen Woche ausrichten + Offset
     const currentDayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
     const monday = new Date(now);
     monday.setDate(now.getDate() - currentDayOfWeek + weekOffset * 7);
@@ -147,7 +148,7 @@ export default function Home() {
     return days;
   };
 
-  const weekDays = getDaysForCurrentWeek();
+  const weekDays = mounted ? getDaysForCurrentWeek() : [];
   const currentKW = weekDays.length > 0 ? getCalendarWeek(weekDays[0]) : 1;
 
   const formatDateString = (date: Date) => {
@@ -155,10 +156,6 @@ export default function Home() {
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
-  };
-
-  const formatDisplayDate = (date: Date) => {
-    return date.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
   };
 
   const formatTime = (timeString: string) => {
@@ -382,18 +379,16 @@ export default function Home() {
             <button 
               onClick={() => setWeekOffset(weekOffset + 1)}
               className="p-2 hover:bg-gray-700 rounded text-gray-300 transition-colors flex items-center gap-1 text-xs font-bold"
-              title="Nächste Woche"
             >
               Nächste <ChevronRight size={16} />
             </button>
           </div>
         </div>
 
-        {/* 7-Tage Grid (Horizontal nebeneinander auf großen Bildschirmen, untereinander auf Mobile) */}
+        {/* 7-Tage Grid */}
         <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
-          {weekDays.map((day, idx) => {
+          {mounted && weekDays.map((day, idx) => {
             const dateStr = formatDateString(day);
-            // Filtere Termine für diesen specific Tag
             const dayAppointments = appointments.filter((apt) => apt.date === dateStr);
             const isToday = formatDateString(new Date()) === dateStr;
 
@@ -414,7 +409,7 @@ export default function Home() {
                   </p>
                 </div>
 
-                {/* Termine am jeweiligen Tag (mit Zeitraster sortiert) */}
+                {/* Termine */}
                 <div className="space-y-2 flex-1">
                   {dayAppointments.length === 0 ? (
                     <p className="text-gray-600 text-xs text-center py-6 italic">Keine Fahrten</p>
