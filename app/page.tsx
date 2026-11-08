@@ -92,9 +92,8 @@ export default function Home() {
     }
   };
 
-  // 5. NEU: Termin löschen
+  // 5. Termin löschen
   const handleDelete = async (id: string) => {
-    // Sicherheitsabfrage im Browser
     if (!window.confirm("Diesen Termin wirklich löschen?")) return;
 
     const { error } = await supabase.from("availabilities").delete().eq("id", id);
@@ -102,7 +101,6 @@ export default function Home() {
     if (error) {
       alert("Fehler beim Löschen: " + error.message);
     } else {
-      // Wenn erfolgreich gelöscht, die Liste direkt neu laden
       fetchData();
     }
   };
@@ -193,9 +191,11 @@ export default function Home() {
               <div className="relative">
                 <Clock className="absolute left-3 top-3 text-gray-500" size={18} />
                 <input 
-                  type="time" step="900"
+                  type="time" 
+                  step="900"
                   className="w-full bg-[#222222] border border-gray-700 rounded-lg py-3 pl-10 pr-2 text-gray-200 focus:outline-none focus:border-yellow-500"
-                  value={startTime} onChange={(e) => setStartTime(e.target.value)}
+                  value={startTime} 
+                  onChange={(e) => setStartTime(e.target.value)}
                 />
               </div>
             </div>
@@ -204,9 +204,11 @@ export default function Home() {
               <div className="relative">
                 <Clock className="absolute left-3 top-3 text-gray-500" size={18} />
                 <input 
-                  type="time" step="900"
+                  type="time" 
+                  step="900"
                   className="w-full bg-[#222222] border border-gray-700 rounded-lg py-3 pl-10 pr-2 text-gray-200 focus:outline-none focus:border-yellow-500"
-                  value={endTime} onChange={(e) => setEndTime(e.target.value)}
+                  value={endTime} 
+                  onChange={(e) => setEndTime(e.target.value)}
                 />
               </div>
             </div>
@@ -254,7 +256,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* Termin-Übersicht mit Löschen-Knopf */}
+      {/* Termin-Übersicht */}
       <div className="max-w-md mx-auto bg-[#1a1a1a] p-6 rounded-xl shadow-2xl border border-gray-800">
         <h2 className="text-lg font-bold mb-4 text-gray-300 flex items-center gap-2">
           <ListTodo className="text-yellow-500" size={20} />
@@ -283,7 +285,6 @@ export default function Home() {
                   <p className="text-xs text-gray-400 mt-1">{formatDate(apt.date)}</p>
                 </div>
                 
-                {/* Rechte Seite: Uhrzeit UND Mülleimer */}
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <p className="text-yellow-500 font-bold bg-[#111111] px-3 py-1 rounded">
