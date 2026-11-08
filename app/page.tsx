@@ -324,7 +324,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* KUGELSICHERER KALENDER MIT FESTER HÖHENBERECHNUNG (34px PRO SLOT) */}
+      {/* KUGELSICHERER KALENDER MIT PERFEKT AUSGERICHTETEM KOPF */}
       <div className="max-w-7xl mx-auto bg-[#1a1a1a] p-4 sm:p-6 rounded-xl shadow-2xl border border-gray-800 overflow-x-auto">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <div className="flex items-center gap-3">
@@ -351,8 +351,14 @@ export default function Home() {
 
         {/* Tabellen-Raster */}
         <div className="min-w-[850px] flex">
-          {/* Feste Zeitspalte links */}
-          <div className="w-20 shrink-0 flex flex-col pt-[53px]">
+          {/* Feste Zeitspalte links mit exakt passendem Platzhalter-Kopf */}
+          <div className="w-20 shrink-0 flex flex-col">
+            {/* Kopf-Platzhalter, der exakt dieselbe Höhe hat wie die Wochentage-Köpfe (py-2 + Rahmen/Abstände) */}
+            <div className="h-[52px] mb-2 bg-[#222222] border border-gray-700 rounded flex items-center justify-center text-[10px] font-bold text-gray-400 uppercase">
+              Zeit
+            </div>
+
+            {/* Die Zeit-Slots */}
             {timeSlots.map((slotObj, sIdx) => (
               <div 
                 key={sIdx} 
@@ -378,11 +384,11 @@ export default function Home() {
               return (
                 <div key={dIdx} className="flex flex-col">
                   {/* Tageskopf */}
-                  <div className={`text-center py-2 mb-2 rounded border ${isToday ? 'bg-yellow-500/20 border-yellow-500/50' : 'bg-[#222222] border-gray-700'}`}>
-                    <p className="text-[11px] font-bold text-gray-400 uppercase">
+                  <div className={`h-[52px] text-center py-2 mb-2 rounded border flex flex-col justify-center ${isToday ? 'bg-yellow-500/20 border-yellow-500/50' : 'bg-[#222222] border-gray-700'}`}>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase leading-tight">
                       {day.toLocaleDateString('de-DE', { weekday: 'short' })}
                     </p>
-                    <p className={`text-xs font-black ${isToday ? 'text-yellow-500' : 'text-gray-200'}`}>
+                    <p className={`text-xs font-black leading-tight ${isToday ? 'text-yellow-500' : 'text-gray-200'}`}>
                       {day.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
                     </p>
                   </div>
