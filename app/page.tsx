@@ -684,8 +684,10 @@ export default function Home() {
               const dayAppointments = appointments.filter((apt) => apt.date === dateStr);
               const isToday = formatDateString(new Date()) === dateStr;
 
-              // Prüfen über ALLE Schüler hinweg, ob an diesem Tag eine Zulassung abläuft
+              // Prüfen über ALLE Schüler hinweg für Zulassung und Theorie-Prüfung
               const expiringLicenses = students.filter(student => student.license_application_expiry === dateStr);
+              const expiringTheories = students.filter(student => student.theory_exam_expiry === dateStr);
+              const hasAnyExpiry = expiringLicenses.length > 0 || expiringTheories.length > 0;
 
               const totalDayMinutes = dayAppointments.reduce((sum, apt) => {
                 const sMin = timeToMinutes(apt.start_time);
@@ -696,16 +698,25 @@ export default function Home() {
               return (
                 <div key={dIdx} className="flex flex-col">
                   {/* Tageskopf */}
-                  <div className={`text-center py-2 mb-2 rounded border flex flex-col justify-center ${expiringLicenses.length > 0 ? 'bg-red-100 border-red-500' : isToday ? 'bg-yellow-500/20 border-yellow-500/60' : 'bg-[#f0ede6] border-zinc-300'}`} style={{ minHeight: '52px' }}>
+                  <div className={`text-center py-2 mb-2 rounded border flex flex-col justify-center gap-0.5 ${hasAnyExpiry ? 'bg-red-100 border-red-500' : isToday ? 'bg-yellow-500/20 border-yellow-500/60' : 'bg-[#f0ede6] border-zinc-300'}`} style={{ minHeight: '52px' }}>
                     <p className="text-[11px] font-bold text-zinc-500 uppercase leading-tight">
                       {day.toLocaleDateString('de-DE', { weekday: 'short' })}
                     </p>
                     <p className={`text-xs font-black leading-tight ${isToday ? 'text-yellow-800' : 'text-zinc-800'}`}>
                       {day.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
                     </p>
+                    
+                    {/* Zulassungs-Warnungen */}
                     {expiringLicenses.map((student, sIdx) => (
-                      <span key={sIdx} className="text-[9px] font-bold text-red-700 bg-red-200 px-1 rounded mt-0.5 flex items-center justify-center gap-0.5 truncate" title={`Zulassung läuft ab: ${student.name}`}>
+                      <span key={`lic-${sIdx}`} className="text-[9px] font-bold text-red-700 bg-red-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Zulassung läuft ab: ${student.name}`}>
                         <AlertTriangle size={10} className="shrink-0" /> Zulassung: {student.name}
+                      </span>
+                    ))}
+
+                    {/* Theorie-Warnungen */}
+                    {expiringTheories.map((student, sIdx) => (
+                      <span key={`theo-${sIdx}`} className="text-[9px] font-bold text-orange-800 bg-orange-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorie läuft ab: ${student.name}`}>
+                        <AlertTriangle size={10} className="shrink-0" /> Theorie: {student.name}
                       </span>
                     ))}
                   </div>
