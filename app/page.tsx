@@ -89,7 +89,7 @@ export default function Home() {
   };
 
   // Hilfsfunktion: Berechnet exakt 2 Jahre nach dem Theorie-Abschluss (im Format YYYY-MM-DD für den internen Vergleich)
-  const calculateTheoryExpiryRaw = (completionDateStr: string) => {
+  const calculateTheoryExpiry = (completionDateStr: string) => {
     if (!completionDateStr) return "";
     const dateObj = new Date(completionDateStr);
     if (isNaN(dateObj.getTime())) return "";
@@ -98,7 +98,7 @@ export default function Home() {
   };
 
   // Hilfsfunktion: Berechnet exakt 1 Jahr nach der bestandenen Theorieprüfung (im Format YYYY-MM-DD für den internen Vergleich)
-  const calculatePracticalExpiryRaw = (passedDateStr: string) => {
+  const calculatePracticalExpiry = (passedDateStr: string) => {
     if (!passedDateStr) return "";
     const dateObj = new Date(passedDateStr);
     if (isNaN(dateObj.getTime())) return "";
@@ -135,8 +135,8 @@ export default function Home() {
     }
     setStudentStatus("Wird gespeichert...");
     
-    const theoryExpiryCalculated = calculateTheoryExpiryRaw(newTheoryCompletion);
-    const practicalExpiryCalculated = calculatePracticalExpiryRaw(newTheoryPassedDate);
+    const theoryExpiryCalculated = calculateTheoryExpiry(newTheoryCompletion);
+    const practicalExpiryCalculated = calculatePracticalExpiry(newTheoryPassedDate);
 
     const { error } = await supabase.from("students").insert([{ 
       name: newStudentName.trim(),
@@ -182,8 +182,8 @@ export default function Home() {
   const handleUpdateStudentProfile = async () => {
     if (!editStudentProfile) return;
 
-    const theoryExpiryCalculated = calculateTheoryExpiryRaw(editStudentProfile.theory_completion_date);
-    const practicalExpiryCalculated = calculatePracticalExpiryRaw(editStudentProfile.theory_passed_date);
+    const theoryExpiryCalculated = calculateTheoryExpiry(editStudentProfile.theory_completion_date);
+    const practicalExpiryCalculated = calculatePracticalExpiry(editStudentProfile.theory_passed_date);
 
     const { error } = await supabase
       .from("students")
