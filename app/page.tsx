@@ -24,7 +24,6 @@ export default function Home() {
   const [newBirthDate, setNewBirthDate] = useState("");
   const [newHasGlasses, setNewHasGlasses] = useState(false);
   const [newTheoryCompletion, setNewTheoryCompletion] = useState("");
-  const [newTheoryExpiry, setNewTheoryExpiry] = useState("");
   const [newLicenseExpiry, setNewLicenseExpiry] = useState("");
   const [newNotes, setNewNotes] = useState("");
   const [studentStatus, setStudentStatus] = useState("");
@@ -88,6 +87,22 @@ export default function Home() {
     return `${parts[2]}.${parts[1]}.${parts[0]}`;
   };
 
+  // Hilfsfunktion: Berechnet exakt 2 Jahre nach dem angegebenen Datum (YYYY-MM-DD)
+  const calculateTheoryExpiry = (completionDateStr: string) => {
+    if (!completionDateStr) return "";
+    const dateObj = new Date(completionDateStr);
+    if (isNaN(dateObj.getTime())) return "";
+    dateObj.setFullYear(dateObj.getFullYear() + 2);
+    return formatDateString(dateObj);
+  };
+
+  const formatDateString = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
   // 2. Daten laden
   const fetchData = async () => {
     const { data: studentData } = await supabase.from("students").select("*").order("name", { ascending: true });
@@ -102,13 +117,16 @@ export default function Home() {
     if (aptData) setAppointments(aptData);
   };
 
-  // 3. Schüler anlegen mit Profil-Daten
+  // 3. Schüler anlegen mit Profil-Daten (Theorie-Ablauf wird automatisch berechnet)
   const handleAddStudent = async () => {
     if (!newStudentName.trim()) {
       setStudentStatus("Bitte einen Namen eingeben!");
       return;
     }
     setStudentStatus("Wird gespeichert...");
+    
+    const theoryExpiryCalculated = calculateTheoryExpiry(newTheoryCompletion);
+
     const { error } = await supabase.from("students").insert([{ 
       name: newStudentName.trim(),
       street: newStreet.trim() || null,
@@ -120,7 +138,7 @@ export default function Home() {
       birth_date: newBirthDate || null,
       has_glasses: newHasGlasses,
       theory_completion_date: newTheoryCompletion || null,
-      theory_exam_expiry: newTheoryExpiry || null,
+      theory_exam_expiry: theoryExpiryCalculated || null,
       license_application_expiry: newLicenseExpiry || null,
       notes: newNotes.trim() || null
     }]);
@@ -139,7 +157,6 @@ export default function Home() {
       setNewBirthDate("");
       setNewHasGlasses(false);
       setNewTheoryCompletion("");
-      setNewTheoryExpiry("");
       setNewLicenseExpiry("");
       setNewNotes("");
       fetchData();
@@ -147,9 +164,11 @@ export default function Home() {
     }
   };
 
-  // 4. Schüler Profil aktualisieren
+  // 4. Schüler Profil aktualisieren (Berechnet Theorie-Ablauf ebenfalls automatisch neu)
   const handleUpdateStudentProfile = async () => {
     if (!editStudentProfile) return;
+
+    const theoryExpiryCalculated = calculateTheoryExpiry(editStudentProfile.theory_completion_date);
 
     const { error } = await supabase
       .from("students")
@@ -164,7 +183,7 @@ export default function Home() {
         birth_date: editStudentProfile.birth_date,
         has_glasses: editStudentProfile.has_glasses,
         theory_completion_date: editStudentProfile.theory_completion_date,
-        theory_exam_expiry: editStudentProfile.theory_exam_expiry,
+        theory_exam_expiry: theoryExpiryCalculated || null,
         license_application_expiry: editStudentProfile.license_application_expiry,
         notes: editStudentProfile.notes,
       })
@@ -314,13 +333,6 @@ export default function Home() {
 
   const weekDays = mounted ? getDaysForCurrentWeek() : [];
   const currentKW = weekDays.length > 0 ? getCalendarWeek(weekDays[0]) : 1;
-
-  const formatDateString = (date: Date) => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  };
 
   const formatTime = (timeString: string) => {
     if (!timeString) return "";
@@ -571,23 +583,13 @@ export default function Home() {
                 value={newTheoryCompletion} onChange={(e) => setNewTheoryCompletion(e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-[10px] font-bold text-red-600 uppercase">Zulassung bis</label>
-                <input 
-                  type="date" 
-                  className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
-                  value={newLicenseExpiry} onChange={(e) => setNewLicenseExpiry(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-red-600 uppercase">Theorie bis</label>
-                <input 
-                  type="date" 
-                  className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
-                  value={newTheoryExpiry} onChange={(e) => setNewTheoryExpiry(e.target.value)}
-                />
-              </div>
+            <div>
+              <label className="block text-[10px] font-bold text-red-600 uppercase">Zulassung bis</label>
+              <input 
+                type="date" 
+                className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
+                value={newLicenseExpiry} onChange={(e) => setNewLicenseExpiry(e.target.value)}
+              />
             </div>
           </div>
           <textarea 
@@ -699,7 +701,8 @@ export default function Home() {
               const isToday = formatDateString(new Date()) === dateStr;
 
               const expiringLicenses = students.filter(student => student.license_application_expiry === dateStr);
-              const expiringTheories = students.filter(student => student.theory_exam_expiry === dateStr);
+              // Hier wird nun automatisch geprüft, ob das Ablaufdatum (Theorie-Abschluss + 2 Jahre) auf diesen Tag fällt
+              const expiringTheories = students.filter(student => calculateTheoryExpiry(student.theory_completion_date) === dateStr);
               const completingTheories = students.filter(student => student.theory_completion_date === dateStr);
               const hasAnyExpiry = expiringLicenses.length > 0 || expiringTheories.length > 0 || completingTheories.length > 0;
 
@@ -727,8 +730,8 @@ export default function Home() {
                     ))}
 
                     {expiringTheories.map((student, sIdx) => (
-                      <span key={`theo-${sIdx}`} className="text-[9px] font-bold text-orange-800 bg-orange-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorie läuft ab: ${student.name}`}>
-                        <AlertTriangle size={10} className="shrink-0" /> Theorie: {student.name}
+                      <span key={`theo-${sIdx}`} className="text-[9px] font-bold text-orange-800 bg-orange-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorie-Prüfung Ablauf (2 Jahre): ${student.name}`}>
+                        <AlertTriangle size={10} className="shrink-0" /> Th. Ablauf: {student.name}
                       </span>
                     ))}
 
@@ -890,19 +893,19 @@ export default function Home() {
               </div>
 
               <div className="border-t border-zinc-200 pt-3 space-y-2">
-                <div>
-                  <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie-Abschluss</span>
-                  <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.theory_completion_date)}</p>
-                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <span className="block text-[10px] font-bold text-red-600 uppercase">Zulassung Frist</span>
-                    <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.license_application_expiry)}</p>
+                    <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie-Abschluss</span>
+                    <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.theory_completion_date)}</p>
                   </div>
                   <div>
-                    <span className="block text-[10px] font-bold text-red-600 uppercase">Theorie-Prüfung Ablauf</span>
-                    <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.theory_exam_expiry)}</p>
+                    <span className="block text-[10px] font-bold text-red-600 uppercase">Theorie-Prüfung Ablauf (+2 J.)</span>
+                    <p className="font-bold text-red-700">{formatDateGerman(calculateTheoryExpiry(viewingStudent.theory_completion_date))}</p>
                   </div>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-red-600 uppercase">Zulassung Frist</span>
+                  <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.license_application_expiry)}</p>
                 </div>
               </div>
 
@@ -1048,25 +1051,14 @@ export default function Home() {
                     onChange={(e) => setEditStudentProfile({...editStudentProfile, theory_completion_date: e.target.value})}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-bold text-red-600 uppercase">Zulassung bis</label>
-                    <input 
-                      type="date" 
-                      className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
-                      value={editStudentProfile.license_application_expiry || ""} 
-                      onChange={(e) => setEditStudentProfile({...editStudentProfile, license_application_expiry: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-red-600 uppercase">Theorie bis</label>
-                    <input 
-                      type="date" 
-                      className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
-                      value={editStudentProfile.theory_exam_expiry || ""} 
-                      onChange={(e) => setEditStudentProfile({...editStudentProfile, theory_exam_expiry: e.target.value})}
-                    />
-                  </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-red-600 uppercase">Zulassung bis</label>
+                  <input 
+                    type="date" 
+                    className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
+                    value={editStudentProfile.license_application_expiry || ""} 
+                    onChange={(e) => setEditStudentProfile({...editStudentProfile, license_application_expiry: e.target.value})}
+                  />
                 </div>
               </div>
 
