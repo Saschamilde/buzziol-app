@@ -684,11 +684,8 @@ export default function Home() {
               const dayAppointments = appointments.filter((apt) => apt.date === dateStr);
               const isToday = formatDateString(new Date()) === dateStr;
 
-              // Prüfen, ob an diesem Tag die Zulassung eines Schülers abläuft (dauerhaft für diesen Tag in der Woche)
-              const expiringLicenses = dayAppointments.filter(apt => {
-                const expiry = apt.students?.license_application_expiry;
-                return expiry && expiry === dateStr;
-              });
+              // Prüfen über ALLE Schüler hinweg, ob an diesem Tag eine Zulassung abläuft
+              const expiringLicenses = students.filter(student => student.license_application_expiry === dateStr);
 
               const totalDayMinutes = dayAppointments.reduce((sum, apt) => {
                 const sMin = timeToMinutes(apt.start_time);
@@ -706,9 +703,9 @@ export default function Home() {
                     <p className={`text-xs font-black leading-tight ${isToday ? 'text-yellow-800' : 'text-zinc-800'}`}>
                       {day.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
                     </p>
-                    {expiringLicenses.map((expApt, eIdx) => (
-                      <span key={eIdx} className="text-[9px] font-bold text-red-700 bg-red-200 px-1 rounded mt-0.5 flex items-center justify-center gap-0.5 truncate" title={`Zulassung läuft ab: ${expApt.students?.name}`}>
-                        <AlertTriangle size={10} className="shrink-0" /> Zulassung: {expApt.students?.name}
+                    {expiringLicenses.map((student, sIdx) => (
+                      <span key={sIdx} className="text-[9px] font-bold text-red-700 bg-red-200 px-1 rounded mt-0.5 flex items-center justify-center gap-0.5 truncate" title={`Zulassung läuft ab: ${student.name}`}>
+                        <AlertTriangle size={10} className="shrink-0" /> Zulassung: {student.name}
                       </span>
                     ))}
                   </div>
