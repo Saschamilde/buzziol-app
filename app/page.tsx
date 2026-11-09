@@ -88,7 +88,7 @@ export default function Home() {
     return `${parts[2]}.${parts[1]}.${parts[0]}`;
   };
 
-  // Hilfsfunktion: Berechnet exakt 2 Jahre nach dem Theorie-Abschluss
+  // Hilfsfunktion: Berechnet exakt 2 Jahre nach dem Theorie-Abschluss (Frist für Theorieprüfung)
   const calculateTheoryExpiry = (completionDateStr: string) => {
     if (!completionDateStr) return "";
     const dateObj = new Date(completionDateStr);
@@ -728,11 +728,11 @@ export default function Home() {
               const isToday = formatDateString(new Date()) === dateStr;
 
               const expiringLicenses = students.filter(student => student.license_application_expiry === dateStr);
-              // Hier wird im Kalender NUR noch das Ablaufdatum nach 1 Jahr angezeigt
-              const expiringTheories = students.filter(student => calculatePracticalExpiry(student.theory_passed_date) === dateStr);
-              const completingTheories = students.filter(student => student.theory_completion_date === dateStr);
+              const expiringPractical = students.filter(student => calculatePracticalExpiry(student.theory_passed_date) === dateStr);
+              // Hier wird nun der Ablauf nach 2 Jahren nach Theorie-Abschluss geprüft und im Kalender angezeigt
+              const expiringTheories = students.filter(student => calculateTheoryExpiry(student.theory_completion_date) === dateStr);
               
-              const hasAnyExpiry = expiringLicenses.length > 0 || expiringTheories.length > 0 || completingTheories.length > 0;
+              const hasAnyExpiry = expiringLicenses.length > 0 || expiringPractical.length > 0 || expiringTheories.length > 0;
 
               const totalDayMinutes = dayAppointments.reduce((sum, apt) => {
                 const sMin = timeToMinutes(apt.start_time);
@@ -757,16 +757,16 @@ export default function Home() {
                       </span>
                     ))}
 
-                    {/* Zeigt nun den Ablauf nach 1 Jahr im Kalender */}
-                    {expiringTheories.map((student, sIdx) => (
-                      <span key={`theo-${sIdx}`} className="text-[9px] font-bold text-orange-800 bg-orange-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorieprüfung Ablauf (1 Jahr): ${student.name}`}>
+                    {expiringPractical.map((student, sIdx) => (
+                      <span key={`prac-${sIdx}`} className="text-[9px] font-bold text-orange-800 bg-orange-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorieprüfung Ablauf (1 Jahr): ${student.name}`}>
                         <AlertTriangle size={10} className="shrink-0" /> Th.Prüf. Ablauf: {student.name}
                       </span>
                     ))}
 
-                    {completingTheories.map((student, sIdx) => (
-                      <span key={`comp-${sIdx}`} className="text-[9px] font-bold text-blue-800 bg-blue-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorie-Abschluss: ${student.name}`}>
-                        <CheckCircle size={10} className="shrink-0" /> Th. Abschluss: {student.name}
+                    {/* Warnung für Theorie-Abschluss Ablauf nach 2 Jahren im Kalender */}
+                    {expiringTheories.map((student, sIdx) => (
+                      <span key={`theo-${sIdx}`} className="text-[9px] font-bold text-purple-800 bg-purple-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorie-Ausbildung Ablauf (2 Jahre): ${student.name}`}>
+                        <AlertTriangle size={10} className="shrink-0" /> Th.Ausb. Ablauf: {student.name}
                       </span>
                     ))}
                   </div>
@@ -924,8 +924,8 @@ export default function Home() {
               <div className="border-t border-zinc-200 pt-3 space-y-2">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie-Abschluss</span>
-                    <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.theory_completion_date)}</p>
+                    <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie-Abschluss (+2 J.)</span>
+                    <p className="font-bold text-purple-700">{formatDateGerman(calculateTheoryExpiry(viewingStudent.theory_completion_date))}</p>
                   </div>
                   <div>
                     <span className="block text-[10px] font-bold text-red-600 uppercase">Theorieprüfung bis (+1 J.)</span>
