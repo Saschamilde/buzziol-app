@@ -13,8 +13,9 @@ export default function Home() {
   const [students, setStudents] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
   
-  // Zustände für neuen Schüler anlegen
-  const [newStudentName, setNewStudentName] = useState("");
+  // Zustände für neuen Schüler anlegen (jetzt getrennt)
+  const [newFirstName, setNewFirstName] = useState("");
+  const [newLastName, setNewLastName] = useState("");
   const [newStreet, setNewStreet] = useState("");
   const [newPostalCode, setNewPostalCode] = useState("");
   const [newCity, setNewCity] = useState("");
@@ -53,9 +54,11 @@ export default function Home() {
   const [editCar, setEditCar] = useState("Automatik");
   const [editPickupLocation, setEditPickupLocation] = useState("Fahrschule");
 
-  // Zustand für das Schüler-Profil-Modal
+  // Zustand für das Schüler-Profil-Modal & Bearbeiten
   const [viewingStudent, setViewingStudent] = useState<any>(null);
   const [editStudentProfile, setEditStudentProfile] = useState<any>(null);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
 
   // Zustand für die angezeigte Woche
   const [weekOffset, setWeekOffset] = useState(0);
@@ -88,7 +91,7 @@ export default function Home() {
     return `${parts[2]}.${parts[1]}.${parts[0]}`;
   };
 
-  // Hilfsfunktion: Berechnet exakt 2 Jahre nach dem Theorie-Abschluss (im Format YYYY-MM-DD)
+  // Hilfsfunktion: Berechnet exakt 2 Jahre nach dem Theorie-Abschluss
   const calculateTheoryExpiry = (completionDateStr: string) => {
     if (!completionDateStr) return "";
     const dateObj = new Date(completionDateStr);
@@ -97,7 +100,7 @@ export default function Home() {
     return formatDateString(dateObj);
   };
 
-  // Hilfsfunktion: Berechnet exakt 1 Jahr nach der bestandenen Theorieprüfung (im Format YYYY-MM-DD)
+  // Hilfsfunktion: Berechnet exakt 1 Jahr nach der bestandenen Theorieprüfung
   const calculatePracticalExpiry = (passedDateStr: string) => {
     if (!passedDateStr) return "";
     const dateObj = new Date(passedDateStr);
@@ -113,9 +116,9 @@ export default function Home() {
     return `${y}-${m}-${d}`;
   };
 
-  // 2. Daten laden
+  // 2. Daten laden (sortiert nach Nachname)
   const fetchData = async () => {
-    const { data: studentData } = await supabase.from("students").select("*").order("name", { ascending: true });
+    const { data: studentData } = await supabase.from("students").select("*").order("last_name", { ascending: true });
     if (studentData) setStudents(studentData);
 
     const { data: aptData } = await supabase
@@ -127,10 +130,10 @@ export default function Home() {
     if (aptData) setAppointments(aptData);
   };
 
-  // 3. Schüler anlegen mit Profil-Daten
+  // 3. Schüler anlegen mit getrenntem Vor- und Nachnamen
   const handleAddStudent = async () => {
-    if (!newStudentName.trim()) {
-      setStudentStatus("Bitte einen Namen eingeben!");
+    if (!newFirstName.trim() || !newLastName.trim()) {
+      setStudentStatus("Bitte Vor- und Nachnamen eingeben!");
       return;
     }
     setStudentStatus("Wird gespeichert...");
@@ -139,7 +142,8 @@ export default function Home() {
     const practicalExpiryCalculated = calculatePracticalExpiry(newTheoryPassedDate);
 
     const { error } = await supabase.from("students").insert([{ 
-      name: newStudentName.trim(),
+      first_name: newFirstName.trim(),
+      last_name: newLastName.trim(),
       street: newStreet.trim() || null,
       postal_code: newPostalCode.trim() || null,
       city: newCity.trim() || null,
@@ -160,7 +164,8 @@ export default function Home() {
       setStudentStatus("Fehler: " + error.message);
     } else {
       setStudentStatus("Schüler hinzugefügt! ✅");
-      setNewStudentName("");
+      setNewFirstName("");
+      setNewLastName("");
       setNewStreet("");
       setNewPostalCode("");
       setNewCity("");
@@ -188,7 +193,8 @@ export default function Home() {
     const { error } = await supabase
       .from("students")
       .update({
-        name: editStudentProfile.name,
+        first_name: editFirstName,
+        last_name: editLastName,
         street: editStudentProfile.street,
         postal_code: editStudentProfile.postal_code,
         city: editStudentProfile.city,
@@ -416,7 +422,9 @@ export default function Home() {
               >
                 <option value="">-- Bitte wählen --</option>
                 {students.map((student) => (
-                  <option key={student.id} value={student.id}>{student.name}</option>
+                  <option key={student.id} value={student.id}>
+                    {student.last_name}, {student.first_name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -527,7 +535,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ERWEITERTE SCHÜLER-VERWALTUNG & PROFIL */}
+      {/* ERWEITERTE SCHÜLER-VERWALTUNG & PROFIL (Getrennte Felder für Vor- und Nachname) */}
       <div className="max-w-md mx-auto bg-white p-6 rounded-xl shadow-xl border border-zinc-200 mb-8">
         <h2 className="text-sm font-bold mb-4 text-zinc-800 flex items-center gap-2">
           <UserPlus className="text-zinc-500" size={18} />
@@ -535,11 +543,19 @@ export default function Home() {
         </h2>
 
         <div className="space-y-3 mb-4">
-          <input 
-            type="text" placeholder="Name des Schülers *"
-            className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2.5 px-3 text-zinc-800 text-sm focus:outline-none focus:border-yellow-600 font-bold"
-            value={newStudentName} onChange={(e) => setNewStudentName(e.target.value)}
-          />
+          <div className="grid grid-cols-2 gap-2">
+            <input 
+              type="text" placeholder="Vorname *"
+              className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2.5 px-3 text-zinc-800 text-sm focus:outline-none focus:border-yellow-600 font-bold"
+              value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)}
+            />
+            <input 
+              type="text" placeholder="Nachname *"
+              className="w-full bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2.5 px-3 text-zinc-800 text-sm focus:outline-none focus:border-yellow-600 font-bold"
+              value={newLastName} onChange={(e) => setNewLastName(e.target.value)}
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             <input 
               type="date" placeholder="Geburtsdatum"
@@ -636,14 +652,14 @@ export default function Home() {
           </p>
         )}
 
-        {/* Liste aller Schüler mit Profil- und Lösch-Button */}
+        {/* Liste aller Schüler */}
         {students.length > 0 && (
           <div className="border-t border-zinc-200 pt-3 max-h-52 overflow-y-auto space-y-2">
             <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-wide mb-1">Vorhandene Schüler ({students.length})</p>
             {students.map((student) => (
               <div key={student.id} className="flex justify-between items-center bg-[#f7f5f0] px-3 py-2 rounded-lg border border-zinc-200 text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-zinc-800">{student.name}</span>
+                  <span className="font-semibold text-zinc-800">{student.last_name}, {student.first_name}</span>
                   {student.has_glasses && <span className="bg-blue-100 text-blue-800 text-[10px] px-1.5 py-0.5 rounded font-bold" title="Sehhilfe erforderlich">👓 Brille</span>}
                 </div>
                 <div className="flex items-center gap-1">
@@ -655,7 +671,7 @@ export default function Home() {
                     <User size={13} /> Profil
                   </button>
                   <button 
-                    onClick={() => handleDeleteStudent(student.id, student.name)}
+                    onClick={() => handleDeleteStudent(student.id, `${student.first_name} ${student.last_name}`)}
                     className="text-red-500 hover:text-red-700 p-1 transition-colors"
                     title="Schüler löschen"
                   >
@@ -727,9 +743,7 @@ export default function Home() {
               const dayAppointments = appointments.filter((apt) => apt.date === dateStr);
               const isToday = formatDateString(new Date()) === dateStr;
 
-              // NEU: Zulassungsfrist wird im Kalender NUR noch angezeigt, wenn die Theorie NOCH NICHT bestanden wurde!
               const expiringLicenses = students.filter(student => !student.theory_passed_date && student.license_application_expiry === dateStr);
-              
               const expiringPractical = students.filter(student => student.theory_passed_date && calculatePracticalExpiry(student.theory_passed_date) === dateStr);
               const expiringTheories = students.filter(student => student.theory_completion_date && calculateTheoryExpiry(student.theory_completion_date) === dateStr);
               
@@ -753,20 +767,20 @@ export default function Home() {
                     </p>
                     
                     {expiringLicenses.map((student, sIdx) => (
-                      <span key={`lic-${sIdx}`} className="text-[9px] font-bold text-red-700 bg-red-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Zulassung läuft ab: ${student.name}`}>
-                        <AlertTriangle size={10} className="shrink-0" /> Zulassung: {student.name}
+                      <span key={`lic-${sIdx}`} className="text-[9px] font-bold text-red-700 bg-red-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Zulassung läuft ab: ${student.last_name}`}>
+                        <AlertTriangle size={10} className="shrink-0" /> Zulassung: {student.last_name}
                       </span>
                     ))}
 
                     {expiringPractical.map((student, sIdx) => (
-                      <span key={`prac-${sIdx}`} className="text-[9px] font-bold text-orange-800 bg-orange-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorieprüfung Ablauf (1 Jahr): ${student.name}`}>
-                        <AlertTriangle size={10} className="shrink-0" /> Th.Prüf. Ablauf: {student.name}
+                      <span key={`prac-${sIdx}`} className="text-[9px] font-bold text-orange-800 bg-orange-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorieprüfung Ablauf (1 Jahr): ${student.last_name}`}>
+                        <AlertTriangle size={10} className="shrink-0" /> Th.Prüf. Ablauf: {student.last_name}
                       </span>
                     ))}
 
                     {expiringTheories.map((student, sIdx) => (
-                      <span key={`theo-${sIdx}`} className="text-[9px] font-bold text-purple-800 bg-purple-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorieausbildung Ablauf (2 Jahre): ${student.name}`}>
-                        <AlertTriangle size={10} className="shrink-0" /> Th.Ausb. Ablauf: {student.name}
+                      <span key={`theo-${sIdx}`} className="text-[9px] font-bold text-purple-800 bg-purple-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorieausbildung Ablauf (2 Jahre): ${student.last_name}`}>
+                        <AlertTriangle size={10} className="shrink-0" /> Th.Ausb. Ablauf: {student.last_name}
                       </span>
                     ))}
                   </div>
@@ -822,7 +836,7 @@ export default function Home() {
                                 </button>
                               </div>
                             </div>
-                            <p className="font-black text-sm truncate tracking-tight">{apt.students?.name}</p>
+                            <p className="font-black text-sm truncate tracking-tight">{apt.students?.first_name} {apt.students?.last_name}</p>
                             
                             {apt.pickup_location === "Fahrschule" ? (
                               <div className="inline-flex items-center bg-white/90 px-2 py-0.5 rounded mt-1 shadow-sm">
@@ -880,10 +894,10 @@ export default function Home() {
 
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 bg-yellow-500/20 text-yellow-800 rounded-full flex items-center justify-center font-black text-xl">
-                {viewingStudent.name.charAt(0).toUpperCase()}
+                {viewingStudent.first_name ? viewingStudent.first_name.charAt(0).toUpperCase() : "?"}
               </div>
               <div>
-                <h2 className="text-xl font-bold text-zinc-900">{viewingStudent.name}</h2>
+                <h2 className="text-xl font-bold text-zinc-900">{viewingStudent.first_name} {viewingStudent.last_name}</h2>
                 {viewingStudent.has_glasses && <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-bold">👓 Sehhilfe erforderlich</span>}
               </div>
             </div>
@@ -957,6 +971,8 @@ export default function Home() {
                 onClick={() => {
                   const s = viewingStudent;
                   setViewingStudent(null);
+                  setEditFirstName(s.first_name || "");
+                  setEditLastName(s.last_name || "");
                   setEditStudentProfile(s);
                 }} 
                 className="w-full bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-2.5 rounded-lg text-sm transition-all shadow-md"
@@ -982,14 +998,25 @@ export default function Home() {
             </h2>
 
             <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
-              <div>
-                <label className="block text-[10px] font-bold text-zinc-500 uppercase">Name</label>
-                <input 
-                  type="text" 
-                  className="w-full bg-[#f4f2ec] border border-zinc-300 rounded py-2 px-3 text-zinc-800 text-sm font-bold"
-                  value={editStudentProfile.name || ""} 
-                  onChange={(e) => setEditStudentProfile({...editStudentProfile, name: e.target.value})}
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase">Vorname</label>
+                  <input 
+                    type="text" 
+                    className="w-full bg-[#f4f2ec] border border-zinc-300 rounded py-2 px-3 text-zinc-800 text-sm font-bold"
+                    value={editFirstName} 
+                    onChange={(e) => setEditFirstName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase">Nachname</label>
+                  <input 
+                    type="text" 
+                    className="w-full bg-[#f4f2ec] border border-zinc-300 rounded py-2 px-3 text-zinc-800 text-sm font-bold"
+                    value={editLastName} 
+                    onChange={(e) => setEditLastName(e.target.value)}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -1158,7 +1185,9 @@ export default function Home() {
                   onChange={(e) => setEditStudentId(e.target.value)}
                 >
                   {students.map((student) => (
-                    <option key={student.id} value={student.id}>{student.name}</option>
+                    <option key={student.id} value={student.id}>
+                      {student.last_name}, {student.first_name}
+                    </option>
                   ))}
                 </select>
               </div>
