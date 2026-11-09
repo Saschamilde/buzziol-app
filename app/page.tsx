@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { User, Clock, CalendarDays, Calendar as CalendarIcon, ListTodo, Car, UserPlus, Trash2, KeyRound, ChevronLeft, ChevronRight, MapPin, Pencil, X, Eye, Phone, Mail, MapPinned, Building2, Calendar, FileText, AlertTriangle } from "lucide-react";
+import { User, Clock, CalendarDays, Calendar as CalendarIcon, ListTodo, Car, UserPlus, Trash2, KeyRound, ChevronLeft, ChevronRight, MapPin, Pencil, X, Eye, Phone, Mail, MapPinned, Building2, Calendar, FileText, AlertTriangle, CheckCircle } from "lucide-react";
 
 // 1. Supabase Verbindung
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -564,7 +564,7 @@ export default function Home() {
           </div>
           <div className="space-y-2 bg-[#f7f5f0] p-2 rounded-lg border border-zinc-200">
             <div>
-              <label className="block text-[10px] font-bold text-zinc-500 uppercase">Theorie-Abschluss</label>
+              <label className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie-Abschluss</label>
               <input 
                 type="date" 
                 className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
@@ -573,7 +573,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] font-bold text-zinc-500 uppercase">Zulassung bis</label>
+                <label className="block text-[10px] font-bold text-red-600 uppercase">Zulassung bis</label>
                 <input 
                   type="date" 
                   className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
@@ -581,7 +581,7 @@ export default function Home() {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-zinc-500 uppercase">Theorie bis</label>
+                <label className="block text-[10px] font-bold text-red-600 uppercase">Theorie bis</label>
                 <input 
                   type="date" 
                   className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
@@ -700,7 +700,8 @@ export default function Home() {
 
               const expiringLicenses = students.filter(student => student.license_application_expiry === dateStr);
               const expiringTheories = students.filter(student => student.theory_exam_expiry === dateStr);
-              const hasAnyExpiry = expiringLicenses.length > 0 || expiringTheories.length > 0;
+              const completingTheories = students.filter(student => student.theory_completion_date === dateStr);
+              const hasAnyExpiry = expiringLicenses.length > 0 || expiringTheories.length > 0 || completingTheories.length > 0;
 
               const totalDayMinutes = dayAppointments.reduce((sum, apt) => {
                 const sMin = timeToMinutes(apt.start_time);
@@ -728,6 +729,12 @@ export default function Home() {
                     {expiringTheories.map((student, sIdx) => (
                       <span key={`theo-${sIdx}`} className="text-[9px] font-bold text-orange-800 bg-orange-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorie läuft ab: ${student.name}`}>
                         <AlertTriangle size={10} className="shrink-0" /> Theorie: {student.name}
+                      </span>
+                    ))}
+
+                    {completingTheories.map((student, sIdx) => (
+                      <span key={`comp-${sIdx}`} className="text-[9px] font-bold text-blue-800 bg-blue-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorie-Abschluss: ${student.name}`}>
+                        <CheckCircle size={10} className="shrink-0" /> Th. Abschluss: {student.name}
                       </span>
                     ))}
                   </div>
@@ -882,7 +889,6 @@ export default function Home() {
                 <p className="font-semibold text-zinc-800 flex items-center gap-1"><Building2 size={13}/> {viewingStudent.school_or_workplace || "Nicht angegeben"}</p>
               </div>
 
-              {/* DREI DATEN IM PROFIL */}
               <div className="border-t border-zinc-200 pt-3 space-y-2">
                 <div>
                   <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie-Abschluss</span>
