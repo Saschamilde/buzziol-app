@@ -88,8 +88,8 @@ export default function Home() {
     return `${parts[2]}.${parts[1]}.${parts[0]}`;
   };
 
-  // Hilfsfunktion: Berechnet exakt 2 Jahre nach dem Theorie-Abschluss
-  const calculateTheoryExpiry = (completionDateStr: string) => {
+  // Hilfsfunktion: Berechnet exakt 2 Jahre nach dem Theorie-Abschluss (im Format YYYY-MM-DD für den internen Vergleich)
+  const calculateTheoryExpiryRaw = (completionDateStr: string) => {
     if (!completionDateStr) return "";
     const dateObj = new Date(completionDateStr);
     if (isNaN(dateObj.getTime())) return "";
@@ -97,8 +97,8 @@ export default function Home() {
     return formatDateString(dateObj);
   };
 
-  // Hilfsfunktion: Berechnet exakt 1 Jahr nach der bestandenen Theorieprüfung
-  const calculatePracticalExpiry = (passedDateStr: string) => {
+  // Hilfsfunktion: Berechnet exakt 1 Jahr nach der bestandenen Theorieprüfung (im Format YYYY-MM-DD für den internen Vergleich)
+  const calculatePracticalExpiryRaw = (passedDateStr: string) => {
     if (!passedDateStr) return "";
     const dateObj = new Date(passedDateStr);
     if (isNaN(dateObj.getTime())) return "";
@@ -135,8 +135,8 @@ export default function Home() {
     }
     setStudentStatus("Wird gespeichert...");
     
-    const theoryExpiryCalculated = calculateTheoryExpiry(newTheoryCompletion);
-    const practicalExpiryCalculated = calculatePracticalExpiry(newTheoryPassedDate);
+    const theoryExpiryCalculated = calculateTheoryExpiryRaw(newTheoryCompletion);
+    const practicalExpiryCalculated = calculatePracticalExpiryRaw(newTheoryPassedDate);
 
     const { error } = await supabase.from("students").insert([{ 
       name: newStudentName.trim(),
@@ -182,8 +182,8 @@ export default function Home() {
   const handleUpdateStudentProfile = async () => {
     if (!editStudentProfile) return;
 
-    const theoryExpiryCalculated = calculateTheoryExpiry(editStudentProfile.theory_completion_date);
-    const practicalExpiryCalculated = calculatePracticalExpiry(editStudentProfile.theory_passed_date);
+    const theoryExpiryCalculated = calculateTheoryExpiryRaw(editStudentProfile.theory_completion_date);
+    const practicalExpiryCalculated = calculatePracticalExpiryRaw(editStudentProfile.theory_passed_date);
 
     const { error } = await supabase
       .from("students")
@@ -925,14 +925,14 @@ export default function Home() {
                     <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie-Abschluss</span>
                     <p className="font-bold text-zinc-900">
                       {formatDateGerman(viewingStudent.theory_completion_date)} 
-                      {viewingStudent.theory_completion_date && <span className="text-purple-700 font-normal block text-[11px]">Ablauf: {calculateTheoryExpiry(viewingStudent.theory_completion_date)}</span>}
+                      {viewingStudent.theory_completion_date && <span className="text-purple-700 font-normal block text-[11px]">Ablauf: {formatDateGerman(calculateTheoryExpiry(viewingStudent.theory_completion_date))}</span>}
                     </p>
                   </div>
                   <div>
                     <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie bestanden</span>
                     <p className="font-bold text-zinc-900">
                       {formatDateGerman(viewingStudent.theory_passed_date)}
-                      {viewingStudent.theory_passed_date && <span className="text-orange-700 font-normal block text-[11px]">Ablauf: {calculatePracticalExpiry(viewingStudent.theory_passed_date)}</span>}
+                      {viewingStudent.theory_passed_date && <span className="text-orange-700 font-normal block text-[11px]">Ablauf: {formatDateGerman(calculatePracticalExpiry(viewingStudent.theory_passed_date))}</span>}
                     </p>
                   </div>
                 </div>
