@@ -88,15 +88,6 @@ export default function Home() {
     return `${parts[2]}.${parts[1]}.${parts[0]}`;
   };
 
-  // Hilfsfunktion: Berechnet exakt 2 Jahre nach dem Theorie-Abschluss (Frist für Theorieprüfung)
-  const calculateTheoryExpiry = (completionDateStr: string) => {
-    if (!completionDateStr) return "";
-    const dateObj = new Date(completionDateStr);
-    if (isNaN(dateObj.getTime())) return "";
-    dateObj.setFullYear(dateObj.getFullYear() + 2);
-    return formatDateString(dateObj);
-  };
-
   // Hilfsfunktion: Berechnet exakt 1 Jahr nach der bestandenen Theorieprüfung
   const calculatePracticalExpiry = (passedDateStr: string) => {
     if (!passedDateStr) return "";
@@ -135,7 +126,6 @@ export default function Home() {
     }
     setStudentStatus("Wird gespeichert...");
     
-    const theoryExpiryCalculated = calculateTheoryExpiry(newTheoryCompletion);
     const practicalExpiryCalculated = calculatePracticalExpiry(newTheoryPassedDate);
 
     const { error } = await supabase.from("students").insert([{ 
@@ -149,7 +139,6 @@ export default function Home() {
       birth_date: newBirthDate || null,
       has_glasses: newHasGlasses,
       theory_completion_date: newTheoryCompletion || null,
-      theory_exam_expiry: theoryExpiryCalculated || null,
       theory_passed_date: newTheoryPassedDate || null,
       practical_exam_expiry: practicalExpiryCalculated || null,
       license_application_expiry: newLicenseExpiry || null,
@@ -182,7 +171,6 @@ export default function Home() {
   const handleUpdateStudentProfile = async () => {
     if (!editStudentProfile) return;
 
-    const theoryExpiryCalculated = calculateTheoryExpiry(editStudentProfile.theory_completion_date);
     const practicalExpiryCalculated = calculatePracticalExpiry(editStudentProfile.theory_passed_date);
 
     const { error } = await supabase
@@ -198,7 +186,6 @@ export default function Home() {
         birth_date: editStudentProfile.birth_date,
         has_glasses: editStudentProfile.has_glasses,
         theory_completion_date: editStudentProfile.theory_completion_date,
-        theory_exam_expiry: theoryExpiryCalculated || null,
         theory_passed_date: editStudentProfile.theory_passed_date,
         practical_exam_expiry: practicalExpiryCalculated || null,
         license_application_expiry: editStudentProfile.license_application_expiry,
@@ -728,11 +715,12 @@ export default function Home() {
               const isToday = formatDateString(new Date()) === dateStr;
 
               const expiringLicenses = students.filter(student => student.license_application_expiry === dateStr);
-              const expiringPractical = students.filter(student => calculatePracticalExpiry(student.theory_passed_date) === dateStr);
-              // Hier wird nun der Ablauf nach 2 Jahren nach Theorie-Abschluss geprüft und im Kalender angezeigt
-              const expiringTheories = students.filter(student => calculateTheoryExpiry(student.theory_completion_date) === dateStr);
               
-              const hasAnyExpiry = expiringLicenses.length > 0 || expiringPractical.length > 0 || expiringTheories.length > 0;
+              // LOGIK: Wenn Theorie bestanden wurde, wird Nummer 1 (Theorie-Abschluss) im Kalender ersetzt durch Nummer 2 (Theorie-Prüfung Ablauf nach 1 Jahr)
+              const expiringPractical = students.filter(student => student.theory_passed_date && calculatePracticalExpiry(student.theory_passed_date) === dateStr);
+              const completingTheories = students.filter(student => !student.theory_passed_date && student.theory_completion_date === dateStr);
+              
+              const hasAnyExpiry = expiringLicenses.length > 0 || expiringPractical.length > 0 || completingTheories.length > 0;
 
               const totalDayMinutes = dayAppointments.reduce((sum, apt) => {
                 const sMin = timeToMinutes(apt.start_time);
@@ -763,10 +751,9 @@ export default function Home() {
                       </span>
                     ))}
 
-                    {/* Warnung für Theorie-Abschluss Ablauf nach 2 Jahren im Kalender */}
-                    {expiringTheories.map((student, sIdx) => (
-                      <span key={`theo-${sIdx}`} className="text-[9px] font-bold text-purple-800 bg-purple-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorie-Ausbildung Ablauf (2 Jahre): ${student.name}`}>
-                        <AlertTriangle size={10} className="shrink-0" /> Th.Ausb. Ablauf: {student.name}
+                    {completingTheories.map((student, sIdx) => (
+                      <span key={`comp-${sIdx}`} className="text-[9px] font-bold text-blue-800 bg-blue-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorie-Abschluss: ${student.name}`}>
+                        <CheckCircle size={10} className="shrink-0" /> Th. Abschluss: {student.name}
                       </span>
                     ))}
                   </div>
@@ -924,8 +911,8 @@ export default function Home() {
               <div className="border-t border-zinc-200 pt-3 space-y-2">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie-Abschluss (+2 J.)</span>
-                    <p className="font-bold text-purple-700">{formatDateGerman(calculateTheoryExpiry(viewingStudent.theory_completion_date))}</p>
+                    <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie-Abschluss</span>
+                    <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.theory_completion_date)}</p>
                   </div>
                   <div>
                     <span className="block text-[10px] font-bold text-red-600 uppercase">Theorieprüfung bis (+1 J.)</span>
