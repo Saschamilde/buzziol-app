@@ -728,11 +728,11 @@ export default function Home() {
               const isToday = formatDateString(new Date()) === dateStr;
 
               const expiringLicenses = students.filter(student => student.license_application_expiry === dateStr);
+              // Hier wird im Kalender NUR noch das Ablaufdatum nach 1 Jahr angezeigt
               const expiringTheories = students.filter(student => calculatePracticalExpiry(student.theory_passed_date) === dateStr);
               const completingTheories = students.filter(student => student.theory_completion_date === dateStr);
-              const passingTheories = students.filter(student => student.theory_passed_date === dateStr);
               
-              const hasAnyExpiry = expiringLicenses.length > 0 || expiringTheories.length > 0 || completingTheories.length > 0 || passingTheories.length > 0;
+              const hasAnyExpiry = expiringLicenses.length > 0 || expiringTheories.length > 0 || completingTheories.length > 0;
 
               const totalDayMinutes = dayAppointments.reduce((sum, apt) => {
                 const sMin = timeToMinutes(apt.start_time);
@@ -757,22 +757,16 @@ export default function Home() {
                       </span>
                     ))}
 
+                    {/* Zeigt nun den Ablauf nach 1 Jahr im Kalender */}
                     {expiringTheories.map((student, sIdx) => (
                       <span key={`theo-${sIdx}`} className="text-[9px] font-bold text-orange-800 bg-orange-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorieprüfung Ablauf (1 Jahr): ${student.name}`}>
                         <AlertTriangle size={10} className="shrink-0" /> Th.Prüf. Ablauf: {student.name}
                       </span>
                     ))}
 
-                    {/* HIER WAR DIE ERGÄNZUNG: Theorie-Abschluss wird nun im Kalender angezeigt */}
                     {completingTheories.map((student, sIdx) => (
                       <span key={`comp-${sIdx}`} className="text-[9px] font-bold text-blue-800 bg-blue-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorie-Abschluss: ${student.name}`}>
                         <CheckCircle size={10} className="shrink-0" /> Th. Abschluss: {student.name}
-                      </span>
-                    ))}
-
-                    {passingTheories.map((student, sIdx) => (
-                      <span key={`pass-${sIdx}`} className="text-[9px] font-bold text-emerald-800 bg-emerald-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorie bestanden: ${student.name}`}>
-                        <CheckCircle size={10} className="shrink-0" /> Th. bestanden: {student.name}
                       </span>
                     ))}
                   </div>
@@ -934,18 +928,18 @@ export default function Home() {
                     <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.theory_completion_date)}</p>
                   </div>
                   <div>
-                    <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie bestanden</span>
-                    <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.theory_passed_date)}</p>
+                    <span className="block text-[10px] font-bold text-red-600 uppercase">Theorieprüfung bis (+1 J.)</span>
+                    <p className="font-bold text-red-700">{formatDateGerman(calculatePracticalExpiry(viewingStudent.theory_passed_date))}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <span className="block text-[10px] font-bold text-red-600 uppercase">Zulassung Frist</span>
-                    <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.license_application_expiry)}</p>
+                    <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie bestanden</span>
+                    <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.theory_passed_date)}</p>
                   </div>
                   <div>
-                    <span className="block text-[10px] font-bold text-red-600 uppercase">Theorieprüfung bis (+1 J.)</span>
-                    <p className="font-bold text-red-700">{formatDateGerman(calculatePracticalExpiry(viewingStudent.theory_passed_date))}</p>
+                    <span className="block text-[10px] font-bold text-red-600 uppercase">Zulassung Frist</span>
+                    <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.license_application_expiry)}</p>
                   </div>
                 </div>
               </div>
