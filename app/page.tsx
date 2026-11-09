@@ -88,7 +88,7 @@ export default function Home() {
     return `${parts[2]}.${parts[1]}.${parts[0]}`;
   };
 
-  // Hilfsfunktion: Berechnet exakt 2 Jahre nach dem Theorie-Abschluss (Frist für Theorieprüfung)
+  // Hilfsfunktion: Berechnet exakt 2 Jahre nach dem Theorie-Abschluss
   const calculateTheoryExpiry = (completionDateStr: string) => {
     if (!completionDateStr) return "";
     const dateObj = new Date(completionDateStr);
@@ -135,6 +135,7 @@ export default function Home() {
     }
     setStudentStatus("Wird gespeichert...");
     
+    const theoryExpiryCalculated = calculateTheoryExpiry(newTheoryCompletion);
     const practicalExpiryCalculated = calculatePracticalExpiry(newTheoryPassedDate);
 
     const { error } = await supabase.from("students").insert([{ 
@@ -148,6 +149,7 @@ export default function Home() {
       birth_date: newBirthDate || null,
       has_glasses: newHasGlasses,
       theory_completion_date: newTheoryCompletion || null,
+      theory_exam_expiry: theoryExpiryCalculated || null,
       theory_passed_date: newTheoryPassedDate || null,
       practical_exam_expiry: practicalExpiryCalculated || null,
       license_application_expiry: newLicenseExpiry || null,
@@ -180,6 +182,7 @@ export default function Home() {
   const handleUpdateStudentProfile = async () => {
     if (!editStudentProfile) return;
 
+    const theoryExpiryCalculated = calculateTheoryExpiry(editStudentProfile.theory_completion_date);
     const practicalExpiryCalculated = calculatePracticalExpiry(editStudentProfile.theory_passed_date);
 
     const { error } = await supabase
@@ -195,6 +198,7 @@ export default function Home() {
         birth_date: editStudentProfile.birth_date,
         has_glasses: editStudentProfile.has_glasses,
         theory_completion_date: editStudentProfile.theory_completion_date,
+        theory_exam_expiry: theoryExpiryCalculated || null,
         theory_passed_date: editStudentProfile.theory_passed_date,
         practical_exam_expiry: practicalExpiryCalculated || null,
         license_application_expiry: editStudentProfile.license_application_expiry,
@@ -725,8 +729,6 @@ export default function Home() {
 
               const expiringLicenses = students.filter(student => student.license_application_expiry === dateStr);
               const expiringPractical = students.filter(student => student.theory_passed_date && calculatePracticalExpiry(student.theory_passed_date) === dateStr);
-              
-              // Hier wird jetzt korrekt nach 2 Jahren nach Theorie-Abschluss im Kalender geprüft
               const expiringTheories = students.filter(student => student.theory_completion_date && calculateTheoryExpiry(student.theory_completion_date) === dateStr);
               
               const hasAnyExpiry = expiringLicenses.length > 0 || expiringPractical.length > 0 || expiringTheories.length > 0;
@@ -920,23 +922,23 @@ export default function Home() {
               <div className="border-t border-zinc-200 pt-3 space-y-2">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie-Abschluss (+2 J.)</span>
-                    <p className="font-bold text-purple-700">{formatDateGerman(calculateTheoryExpiry(viewingStudent.theory_completion_date))}</p>
+                    <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie-Abschluss</span>
+                    <p className="font-bold text-zinc-900">
+                      {formatDateGerman(viewingStudent.theory_completion_date)} 
+                      {viewingStudent.theory_completion_date && <span className="text-purple-700 font-normal block text-[11px]">Ablauf: {calculateTheoryExpiry(viewingStudent.theory_completion_date)}</span>}
+                    </p>
                   </div>
-                  <div>
-                    <span className="block text-[10px] font-bold text-red-600 uppercase">Theorieprüfung bis (+1 J.)</span>
-                    <p className="font-bold text-red-700">{formatDateGerman(calculatePracticalExpiry(viewingStudent.theory_passed_date))}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie bestanden</span>
-                    <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.theory_passed_date)}</p>
+                    <p className="font-bold text-zinc-900">
+                      {formatDateGerman(viewingStudent.theory_passed_date)}
+                      {viewingStudent.theory_passed_date && <span className="text-orange-700 font-normal block text-[11px]">Ablauf: {calculatePracticalExpiry(viewingStudent.theory_passed_date)}</span>}
+                    </p>
                   </div>
-                  <div>
-                    <span className="block text-[10px] font-bold text-red-600 uppercase">Zulassung Frist</span>
-                    <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.license_application_expiry)}</p>
-                  </div>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-red-600 uppercase">Zulassung Frist</span>
+                  <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.license_application_expiry)}</p>
                 </div>
               </div>
 
