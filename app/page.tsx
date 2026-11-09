@@ -23,6 +23,7 @@ export default function Home() {
   const [newEmail, setNewEmail] = useState("");
   const [newBirthDate, setNewBirthDate] = useState("");
   const [newHasGlasses, setNewHasGlasses] = useState(false);
+  const [newTheoryCompletion, setNewTheoryCompletion] = useState("");
   const [newTheoryExpiry, setNewTheoryExpiry] = useState("");
   const [newLicenseExpiry, setNewLicenseExpiry] = useState("");
   const [newNotes, setNewNotes] = useState("");
@@ -118,6 +119,7 @@ export default function Home() {
       email: newEmail.trim() || null,
       birth_date: newBirthDate || null,
       has_glasses: newHasGlasses,
+      theory_completion_date: newTheoryCompletion || null,
       theory_exam_expiry: newTheoryExpiry || null,
       license_application_expiry: newLicenseExpiry || null,
       notes: newNotes.trim() || null
@@ -136,6 +138,7 @@ export default function Home() {
       setNewEmail("");
       setNewBirthDate("");
       setNewHasGlasses(false);
+      setNewTheoryCompletion("");
       setNewTheoryExpiry("");
       setNewLicenseExpiry("");
       setNewNotes("");
@@ -160,6 +163,7 @@ export default function Home() {
         email: editStudentProfile.email,
         birth_date: editStudentProfile.birth_date,
         has_glasses: editStudentProfile.has_glasses,
+        theory_completion_date: editStudentProfile.theory_completion_date,
         theory_exam_expiry: editStudentProfile.theory_exam_expiry,
         license_application_expiry: editStudentProfile.license_application_expiry,
         notes: editStudentProfile.notes,
@@ -558,22 +562,32 @@ export default function Home() {
               value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
             />
           </div>
-          <div className="grid grid-cols-2 gap-2 bg-[#f7f5f0] p-2 rounded-lg border border-zinc-200">
+          <div className="space-y-2 bg-[#f7f5f0] p-2 rounded-lg border border-zinc-200">
             <div>
-              <label className="block text-[10px] font-bold text-zinc-500 uppercase">Zulassung bis</label>
+              <label className="block text-[10px] font-bold text-zinc-500 uppercase">Theorie-Abschluss</label>
               <input 
                 type="date" 
                 className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
-                value={newLicenseExpiry} onChange={(e) => setNewLicenseExpiry(e.target.value)}
+                value={newTheoryCompletion} onChange={(e) => setNewTheoryCompletion(e.target.value)}
               />
             </div>
-            <div>
-              <label className="block text-[10px] font-bold text-zinc-500 uppercase">Theorie-Prüfung bis</label>
-              <input 
-                type="date" 
-                className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
-                value={newTheoryExpiry} onChange={(e) => setNewTheoryExpiry(e.target.value)}
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase">Zulassung bis</label>
+                <input 
+                  type="date" 
+                  className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
+                  value={newLicenseExpiry} onChange={(e) => setNewLicenseExpiry(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase">Theorie bis</label>
+                <input 
+                  type="date" 
+                  className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
+                  value={newTheoryExpiry} onChange={(e) => setNewTheoryExpiry(e.target.value)}
+                />
+              </div>
             </div>
           </div>
           <textarea 
@@ -684,7 +698,6 @@ export default function Home() {
               const dayAppointments = appointments.filter((apt) => apt.date === dateStr);
               const isToday = formatDateString(new Date()) === dateStr;
 
-              // Prüfen über ALLE Schüler hinweg für Zulassung und Theorie-Prüfung
               const expiringLicenses = students.filter(student => student.license_application_expiry === dateStr);
               const expiringTheories = students.filter(student => student.theory_exam_expiry === dateStr);
               const hasAnyExpiry = expiringLicenses.length > 0 || expiringTheories.length > 0;
@@ -706,14 +719,12 @@ export default function Home() {
                       {day.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
                     </p>
                     
-                    {/* Zulassungs-Warnungen */}
                     {expiringLicenses.map((student, sIdx) => (
                       <span key={`lic-${sIdx}`} className="text-[9px] font-bold text-red-700 bg-red-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Zulassung läuft ab: ${student.name}`}>
                         <AlertTriangle size={10} className="shrink-0" /> Zulassung: {student.name}
                       </span>
                     ))}
 
-                    {/* Theorie-Warnungen */}
                     {expiringTheories.map((student, sIdx) => (
                       <span key={`theo-${sIdx}`} className="text-[9px] font-bold text-orange-800 bg-orange-200 px-1 rounded flex items-center justify-center gap-0.5 truncate" title={`Theorie läuft ab: ${student.name}`}>
                         <AlertTriangle size={10} className="shrink-0" /> Theorie: {student.name}
@@ -871,14 +882,21 @@ export default function Home() {
                 <p className="font-semibold text-zinc-800 flex items-center gap-1"><Building2 size={13}/> {viewingStudent.school_or_workplace || "Nicht angegeben"}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 border-t border-zinc-200 pt-3">
+              {/* DREI DATEN IM PROFIL */}
+              <div className="border-t border-zinc-200 pt-3 space-y-2">
                 <div>
-                  <span className="block text-[10px] font-bold text-red-600 uppercase">Zulassung Frist</span>
-                  <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.license_application_expiry)}</p>
+                  <span className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie-Abschluss</span>
+                  <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.theory_completion_date)}</p>
                 </div>
-                <div>
-                  <span className="block text-[10px] font-bold text-red-600 uppercase">Theorie-Prüfung Ablauf</span>
-                  <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.theory_exam_expiry)}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="block text-[10px] font-bold text-red-600 uppercase">Zulassung Frist</span>
+                    <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.license_application_expiry)}</p>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-bold text-red-600 uppercase">Theorie-Prüfung Ablauf</span>
+                    <p className="font-bold text-zinc-900">{formatDateGerman(viewingStudent.theory_exam_expiry)}</p>
+                  </div>
                 </div>
               </div>
 
@@ -1014,24 +1032,35 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 bg-[#f7f5f0] p-2 rounded border border-zinc-200">
+              <div className="space-y-2 bg-[#f7f5f0] p-2 rounded border border-zinc-200">
                 <div>
-                  <label className="block text-[10px] font-bold text-red-600 uppercase">Zulassung bis</label>
+                  <label className="block text-[10px] font-bold text-zinc-600 uppercase">Theorie-Abschluss</label>
                   <input 
                     type="date" 
                     className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
-                    value={editStudentProfile.license_application_expiry || ""} 
-                    onChange={(e) => setEditStudentProfile({...editStudentProfile, license_application_expiry: e.target.value})}
+                    value={editStudentProfile.theory_completion_date || ""} 
+                    onChange={(e) => setEditStudentProfile({...editStudentProfile, theory_completion_date: e.target.value})}
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-red-600 uppercase">Theorie bis</label>
-                  <input 
-                    type="date" 
-                    className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
-                    value={editStudentProfile.theory_exam_expiry || ""} 
-                    onChange={(e) => setEditStudentProfile({...editStudentProfile, theory_exam_expiry: e.target.value})}
-                  />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-red-600 uppercase">Zulassung bis</label>
+                    <input 
+                      type="date" 
+                      className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
+                      value={editStudentProfile.license_application_expiry || ""} 
+                      onChange={(e) => setEditStudentProfile({...editStudentProfile, license_application_expiry: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-red-600 uppercase">Theorie bis</label>
+                    <input 
+                      type="date" 
+                      className="w-full bg-white border border-zinc-300 rounded py-1 px-1 text-zinc-800 text-xs mt-1"
+                      value={editStudentProfile.theory_exam_expiry || ""} 
+                      onChange={(e) => setEditStudentProfile({...editStudentProfile, theory_exam_expiry: e.target.value})}
+                    />
+                  </div>
                 </div>
               </div>
 
