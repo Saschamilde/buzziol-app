@@ -88,7 +88,7 @@ export default function Home() {
     return `${parts[2]}.${parts[1]}.${parts[0]}`;
   };
 
-  // Hilfsfunktion: Berechnet exakt 2 Jahre nach dem Theorie-Abschluss (im Format YYYY-MM-DD für den internen Vergleich)
+  // Hilfsfunktion: Berechnet exakt 2 Jahre nach dem Theorie-Abschluss (im Format YYYY-MM-DD)
   const calculateTheoryExpiry = (completionDateStr: string) => {
     if (!completionDateStr) return "";
     const dateObj = new Date(completionDateStr);
@@ -97,7 +97,7 @@ export default function Home() {
     return formatDateString(dateObj);
   };
 
-  // Hilfsfunktion: Berechnet exakt 1 Jahr nach der bestandenen Theorieprüfung (im Format YYYY-MM-DD für den internen Vergleich)
+  // Hilfsfunktion: Berechnet exakt 1 Jahr nach der bestandenen Theorieprüfung (im Format YYYY-MM-DD)
   const calculatePracticalExpiry = (passedDateStr: string) => {
     if (!passedDateStr) return "";
     const dateObj = new Date(passedDateStr);
@@ -727,7 +727,9 @@ export default function Home() {
               const dayAppointments = appointments.filter((apt) => apt.date === dateStr);
               const isToday = formatDateString(new Date()) === dateStr;
 
-              const expiringLicenses = students.filter(student => student.license_application_expiry === dateStr);
+              // NEU: Zulassungsfrist wird im Kalender NUR noch angezeigt, wenn die Theorie NOCH NICHT bestanden wurde!
+              const expiringLicenses = students.filter(student => !student.theory_passed_date && student.license_application_expiry === dateStr);
+              
               const expiringPractical = students.filter(student => student.theory_passed_date && calculatePracticalExpiry(student.theory_passed_date) === dateStr);
               const expiringTheories = students.filter(student => student.theory_completion_date && calculateTheoryExpiry(student.theory_completion_date) === dateStr);
               
