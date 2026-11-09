@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { User, Clock, CalendarDays, Calendar as CalendarIcon, ListTodo, Car, UserPlus, Trash2, KeyRound, ChevronLeft, ChevronRight, MapPin, Pencil, X, Eye, Phone, Mail, MapPinned, Building2, Calendar, FileText } from "lucide-react";
+import { User, Clock, CalendarDays, Calendar as CalendarIcon, ListTodo, Car, UserPlus, Trash2, KeyRound, ChevronLeft, ChevronRight, MapPin, Pencil, X, Eye, Phone, Mail, MapPinned, Building2, Calendar, FileText, AlertTriangle } from "lucide-react";
 
 // 1. Supabase Verbindung
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -94,7 +94,7 @@ export default function Home() {
 
     const { data: aptData } = await supabase
       .from("availabilities")
-      .select("*, students(name)")
+      .select("*, students(*)")
       .order("date", { ascending: true })
       .order("start_time", { ascending: true });
     
@@ -684,6 +684,12 @@ export default function Home() {
               const dayAppointments = appointments.filter((apt) => apt.date === dateStr);
               const isToday = formatDateString(new Date()) === dateStr;
 
+              // Prüfen, ob an diesem Tag eine Zulassungsfrist eines Schülers mit Termin abläuft oder überschritten ist
+              const expiringLicenses = dayAppointments.filter(apt => {
+                const expiry = apt.students?.license_application_expiry;
+                return expiry && expiry === dateStr;
+              });
+
               const totalDayMinutes = dayAppointments.reduce((sum, apt) => {
                 const sMin = timeToMinutes(apt.start_time);
                 const eMin = timeToMinutes(apt.end_time);
@@ -693,13 +699,18 @@ export default function Home() {
               return (
                 <div key={dIdx} className="flex flex-col">
                   {/* Tageskopf */}
-                  <div className={`h-[52px] text-center py-2 mb-2 rounded border flex flex-col justify-center ${isToday ? 'bg-yellow-500/20 border-yellow-500/60' : 'bg-[#f0ede6] border-zinc-300'}`}>
+                  <div className={`text-center py-2 mb-2 rounded border flex flex-col justify-center ${expiringLicenses.length > 0 ? 'bg-red-100 border-red-500' : isToday ? 'bg-yellow-500/20 border-yellow-500/60' : 'bg-[#f0ede6] border-zinc-300'}`} style={{ minHeight: '52px' }}>
                     <p className="text-[11px] font-bold text-zinc-500 uppercase leading-tight">
                       {day.toLocaleDateString('de-DE', { weekday: 'short' })}
                     </p>
                     <p className={`text-xs font-black leading-tight ${isToday ? 'text-yellow-800' : 'text-zinc-800'}`}>
                       {day.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
                     </p>
+                    {expiringLicenses.length > 0 && (
+                      <span className="text-[9px] font-bold text-red-700 bg-red-200 px-1 rounded mt-0.5 flex items-center justify-center gap-0.5">
+                        <AlertTriangle size={10} /> Zulassung läuft ab!
+                      </span>
+                    )}
                   </div>
 
                   {/* Container für Slots und Termine */}
@@ -1138,7 +1149,7 @@ export default function Home() {
                       {hours.map((h) => <option key={h} value={h}>{h}</option>)}
                     </select>
                     <select className="bg-[#f4f2ec] border border-zinc-300 rounded-lg py-2 px-1 text-zinc-800 text-xs text-center" value={editStartMinute} onChange={(e) => setEditStartMinute(e.target.value)}>
-                      {minutes.map((m) => <option key={m} value= {m}>{m}</option>)}
+                      {minutes.map((m) => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
                 </div>
